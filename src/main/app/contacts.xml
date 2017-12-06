@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <sub-flow name="get_contacts_by_company">
+        <http:request config-ref="HTTP_Request_Configuration" path="/getContactsByCompany.php" method="GET" doc:name="HTTP - Get Contacts By Company">
+            <http:request-builder>
+                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
+            </http:request-builder>
+        </http:request>
+        <dw:transform-message doc:name="Transform Message - payload" metadata:id="e7be1efc-37e6-4603-97e3-132e75930a6b">
+            <dw:input-payload doc:sample="sample_data\json_2.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable variableName="teamleader_contacts" value="#[payload]" doc:name="Variable - teamleader_contacts"/>
+    </sub-flow>
+</mule>

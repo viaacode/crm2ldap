@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:context="http://www.springframework.org/schema/context" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10002" doc:name="HTTP Listener Configuration"/>
+    <context:property-placeholder location="${mule.env}.properties"/>
+    <http:request-config name="HTTP_Request_Configuration" protocol="HTTPS" host="${teamleader.host}" port="443" basePath="/api" doc:name="HTTP Request Configuration"/>
+    <sub-flow name="company_create_update">
+        <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
+        <dw:transform-message doc:name="JSON to JAVA" metadata:id="d537444b-f8a9-4d4a-b292-13201ecd3278">
+            <dw:input-payload doc:sample="sample_data\json.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="set_variables" doc:name="Set Variables"/>
+        <flow-ref name="get_company" doc:name="Get Company"/>
+        <flow-ref name="get_custom_fields" doc:name="Get Custom Fields"/>
+        <flow-ref name="checks" doc:name="Checks op de Data"/>
+        <choice doc:name="Checks OK | NOK">
+            <when expression="#[flowVars.checks_passed == &quot;true&quot;]">
+                <flow-ref name="get_or_number" doc:name="OK- Get OR Number if not yet available"/>
+                <flow-ref name="ldap_check_if_company" doc:name="Check If Company excists in LDAP"/>
+                <choice doc:name="Company - Excists?">
+                    <when expression="#[flowVars.company_excists == true]">
+                        <flow-ref name="ldap_update_organization" doc:name="TRUE - LDAP Update Organization"/>
+                    </when>
+                    <otherwise>
+                        <flow-ref name="ldap_add_organazation" doc:name="FALSE - LDAP Add Organization"/>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <logger level="INFO" doc:name="NOK - Stop"/>
+                <set-variable variableName="result" value="#['Company not created or updated because it did not pass the checks']" doc:name="Variable - result"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+
+</mule>

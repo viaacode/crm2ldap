@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <smtp:gmail-connector name="Gmail" contentType="text/html" validateConnections="true" doc:name="Gmail"/>
+    <sub-flow name="company_delete">
+        <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
+        <dw:transform-message doc:name="JSON to JAVA" metadata:id="a132686a-007f-4a77-9674-1826616d4c7d">
+            <dw:input-payload doc:sample="C:\Users\Rob\Dropbox\Projects\VIAA\company_deleted_input.json" mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="set_variables" doc:name="Set Variables"/>
+        <flow-ref name="get_company" doc:name="Get Company"/>
+        <set-payload value="#[&quot;Door op deze link &lt;a href=\&quot;&quot; + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;\&quot;&gt;Verwijder Bedrijf - &quot; + flowVars.company.name + &quot;&lt;/a&gt; te klikken bevestigd u het verwijderen van het bedrijf in LDAP.&quot;]" doc:name="Set Mail Body"/>
+        <smtp:outbound-endpoint host="${smtp.host}" port="${smtp.port}" user="${smtp.username}" password="${smtp.password}" to="${email.helpdesk.to}" from="${email.from}" subject="Bevestig Verwijderen van Bedrijf in LDAP" responseTimeout="10000" doc:name="SMTP" connector-ref="Gmail"/>
+        <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
+    </sub-flow>
+    <sub-flow name="company_delete_get">
+        <logger message="DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
+         <set-variable variableName="object_id" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Set  object_id"/>
+        <flow-ref name="get_company" doc:name="Get Company"/>
+        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
+        <set-variable variableName="state" value="#['COMPANY_DELETE']" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch - COMPANY DELETE"/>
+        <choice doc:name="OR Number available?">
+            <when expression="#[flowVars.or_number == null]">
+                <set-payload value="#[&quot;Company not deleted because it does not have an OR Number&quot;]" mimeType="text/html" doc:name="Not deleted - No OR Number"/>
+            </when>
+            <otherwise>
+                <flow-ref name="ldap_delete_organization" doc:name="LDAP Delete Organization"/>
+                <set-payload value="#[&quot;Company has been deleted in LDAP&quot;]" mimeType="text/html" doc:name="Company has been deleted in LDAP"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+</mule>

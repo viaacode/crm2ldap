@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:context="http://www.springframework.org/schema/context" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+    <context:property-placeholder location="${mule.env}.properties"/>
+    <sub-flow name="set_variables">
+        <set-variable variableName="event_type" value="#[payload.event_type]" doc:name="Variable - event_type"/>
+        <set-variable variableName="object_type" value="#[payload.object_type]" doc:name="Variable - object_type"/>
+        <set-variable variableName="object_id" value="#[payload.object_id]" doc:name="Variable - object_id"/>
+        <set-variable variableName="state" value="#['RECEIVED_WEBHOOK']" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch - RECEIVED_WEBHOOK"/>
+    </sub-flow>
+</mule>

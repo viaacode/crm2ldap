@@ -1,0 +1,114 @@
+[  
+   {  
+      "id":146855,
+      "for":"company",
+      "name":"1 - Type organisatie",
+      "type":"enum",
+      "group":""
+   },
+   {  
+      "id":146856,
+      "for":"company",
+      "name":"2 - Relaties andere dan CP",
+      "type":"enum",
+      "group":""
+   },
+   {  
+      "id":146834,
+      "for":"company",
+      "name":"3 - Nickname",
+      "type":"string",
+      "group":""
+   },
+   {  
+      "id":146872,
+      "for":"company",
+      "name":"4 - bestelbon",
+      "type":"boolean",
+      "group":""
+   },
+   {  
+      "id":146868,
+      "for":"company",
+      "name":"4 - kring",
+      "type":"set",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146858,
+      "for":"company",
+      "name":"5 - CP status",
+      "type":"enum",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146859,
+      "for":"company",
+      "name":"8 - Actief",
+      "type":"enum",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146860,
+      "for":"company",
+      "name":"9 - Intentieverklaring",
+      "type":"enum",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146869,
+      "for":"company",
+      "name":"A - AV Materiaal",
+      "type":"set",
+      "group":"Digitalisering"
+   },
+   {  
+      "id":146871,
+      "for":"company",
+      "name":"A - Intake digitale collecties",
+      "type":"boolean",
+      "group":"Archivering"
+   },
+   {  
+      "id":146864,
+      "for":"company",
+      "name":"A - Toestemming starten",
+      "type":"boolean",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146870,
+      "for":"company",
+      "name":"B - Golf",
+      "type":"set",
+      "group":"Digitalisering"
+   },
+   {  
+      "id":146862,
+      "for":"company",
+      "name":"B - Samenwerkingsovereenkomst",
+      "type":"boolean",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146863,
+      "for":"company",
+      "name":"C - Service Agreement",
+      "type":"boolean",
+      "group":"Content Partner"
+   },
+   {  
+      "id":146873,
+      "for":"company",
+      "name":"Facturatie emailadres",
+      "type":"alt_email",
+      "group":""
+   },
+   {  
+      "id":146846,
+      "for":"company",
+      "name":"H - OR-ID",
+      "type":"string",
+      "group":"LDAP"
+   }
+]
