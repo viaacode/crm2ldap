@@ -1,5 +1,7 @@
 staging.properties
 production.properties
+local.properties
+.classpath
 catalog
 mappings
 src/main/app/mule-app.properties
