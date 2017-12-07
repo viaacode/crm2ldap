@@ -8,7 +8,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10002" doc:name="HTTP Listener Configuration"/>
     <context:property-placeholder location="${mule.env}.properties"/>
-    <http:request-config name="HTTP_Request_Configuration" protocol="HTTPS" host="${teamleader.host}" port="443" basePath="/api" doc:name="HTTP Request Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" protocol="HTTPS" host="${teamleader.host}" port="443" basePath="/api" doc:name="HTTP Request Configuration" proxy-ref="Proxy_Configuration"/>
     <sub-flow name="company_create_update">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
         <dw:transform-message doc:name="JSON to JAVA" metadata:id="d537444b-f8a9-4d4a-b292-13201ecd3278">
@@ -22,9 +22,9 @@ payload]]></dw:set-payload>
         <flow-ref name="get_company" doc:name="Get Company"/>
         <flow-ref name="get_custom_fields" doc:name="Get Custom Fields"/>
         <flow-ref name="checks" doc:name="Checks op de Data"/>
+        <flow-ref name="get_or_number" doc:name="OK- Get OR Number if not yet available"/>
         <choice doc:name="Checks OK | NOK">
             <when expression="#[flowVars.checks_passed == &quot;true&quot;]">
-                <flow-ref name="get_or_number" doc:name="OK- Get OR Number if not yet available"/>
                 <flow-ref name="ldap_check_if_company" doc:name="Check If Company excists in LDAP"/>
                 <choice doc:name="Company - Excists?">
                     <when expression="#[flowVars.company_excists == true]">
@@ -38,6 +38,17 @@ payload]]></dw:set-payload>
             <otherwise>
                 <logger level="INFO" doc:name="NOK - Stop"/>
                 <set-variable variableName="result" value="#['Company not created or updated because it did not pass the checks']" doc:name="Variable - result"/>
+                <flow-ref name="ldap_check_if_or_number_and_company" doc:name="Check if there is a valid LDAP Entry"/>
+                <choice doc:name="Choice - valid LDAP Entry is available?">
+                    <when expression="#[ldap_entry_excists == false]">
+                        <logger level="INFO" doc:name="FALSE - Do Nothing"/>
+                    </when>
+                    <otherwise>
+                        <logger level="INFO" doc:name="TRUE - Send OUT ZENDESK ALERT - Valid entry has been changed so that it does not pass the checks anymore."/>
+                    </otherwise>
+                </choice>
+                <set-variable variableName="state" value="#['ENTRY_DID_NOT_PASS_CHECKS']" doc:name="Variable - state"/>
+                <flow-ref name="log_elastic_search" doc:name="eSearch - ENTRY_DID_NOT_PASS_CHECKS"/>
             </otherwise>
         </choice>
     </sub-flow>

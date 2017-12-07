@@ -13,6 +13,7 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
     <context:property-placeholder location="${mule.env}.properties"/>
+    <http:proxy name="Proxy_Configuration" host="proxy" port="80" doc:name="Proxy Configuration"/>
     <sub-flow name="update_company_with_or_number">
         <choice doc:name="Check if OR Number needs to be updated in Teamleader">
             <when expression="#[flowVars.update_or_number_in_teamleader == &quot;true&quot;]">

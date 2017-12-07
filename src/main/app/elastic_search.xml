@@ -40,7 +40,9 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 	(xref_sectors: flowVars.xref_sectors) when flowVars.xref_sectors != null,
 	(ldap_dn: flowVars.ldap_dn) when flowVars.ldap_dn != null,
 	(error_message: flowVars.error_message) when flowVars.error_message != null,
-	(error_cause: flowVars.error_cause) when flowVars.error_cause != null
+	(error_cause: flowVars.error_cause) when flowVars.error_cause != null,
+	(ldap_entry_excists: flowVars.ldap_entry_excists) when flowVars.ldap_entry_excists != null,
+	(ldap_entry_string: flowVars.ldap_entry_string) when flowVars.ldap_entry_string != null
 }]]></dw:set-payload>
         </dw:transform-message>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
