@@ -14,7 +14,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
             <set-variable variableName="error_message" value="Failed to process message" doc:name="Set error_message"/>
                 <set-variable variableName="error_cause" value="#[exception.toString() + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="Set error_cause"/>
             <set-variable variableName="state" value="#['EXCEPTION']" doc:name="Variable - state"/>
-            <flow-ref name="log_elastic_search" doc:name="eSearch - EXCEPTION"/>
+            <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
             <set-property propertyName="http.status" value="400" doc:name="Property - 400"/>
             <set-payload value="#[flowVars.error_message + &quot;\n&quot;+ flowVars.error_cause]" doc:name="Set Payload - error_message"/>
                  </catch-exception-strategy>

@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+    <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
     <sub-flow name="get_contacts_by_company">
-        <http:request config-ref="HTTP_Request_Configuration" path="/getContactsByCompany.php" method="GET" doc:name="HTTP - Get Contacts By Company">
+        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContactsByCompany.php" method="GET" doc:name="HTTP - Get Contacts By Company">
             <http:request-builder>
                 <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
                 <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
@@ -22,8 +26,129 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 ---
 payload]]></dw:set-payload>
         </dw:transform-message>
-        <set-variable variableName="crm_contacts" value="#[payload]" doc:name="Variable - teamleader_contacts"/>
+        <scripting:component doc:name="Groovy - crm_contacts as LinkedHasMap">
+            <scripting:script engine="Groovy"><![CDATA[LinkedHashMap<Integer, LinkedHashMap> crm_contacts = new LinkedHashMap<Integer, LinkedHashMap>();
+
+for (int i = 0; i < payload.size(); i++) {
+        crm_contacts.put(payload[i].get("id"), payload[i]);
+            }
+
+return crm_contacts]]></scripting:script>
+        </scripting:component>
+        <set-variable variableName="crm_contacts" value="#[payload]" doc:name="Variable - crm_contacts"/>
         <set-variable variableName="state" value="RELATED_CONTACTS_BY_COMPANY" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="eSearch - RELATED_CONTACTS_BY_COMPANY"/>
+    </sub-flow>
+    <sub-flow name="get_contact">
+        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContact.php" method="GET" doc:name="HTTP - Get Contact">
+            <http:request-builder>
+                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                <http:query-param paramName="contact_id" value="#[flowVars.contact_id]"/>
+            </http:request-builder>
+        </http:request>
+        <dw:transform-message doc:name="Transform Message" metadata:id="388405f4-86ce-40c2-9551-701426cb7242">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable variableName="contact" value="#[payload]" doc:name="Set Variable - contact"/>
+    </sub-flow>
+    <sub-flow name="contact_check_required_fields">
+        <validation:is-not-empty config-ref="Validation_Configuration" value="#[flowVars.contact.forename]" doc:name="Validation - Forename must have a value" message="Contact Forename is Empty"/>
+        <validation:is-not-empty config-ref="Validation_Configuration" value="#[flowVars.contact.surname]" doc:name="Validation - Surname must have a value" message="Contact Surename is Empty"/>
+        <validation:is-email config-ref="Validation_Configuration" email="#[flowVars.contact.email]" doc:name="Validation - Must have a valid email address" message="Contact must have a valid emal address"/>
+    </sub-flow>
+    <sub-flow name="contact_set_uuid">
+        <set-payload value="#['']" doc:name="Set Payload - Empty"/>
+        <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
+        <set-attachment attachmentName="contact_id" value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - contact_id"/>
+        <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.user_id}" value="#[(flowVars[&quot;ldap_entry_uuid&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID)"/>
+        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+            <http:request-builder>
+                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+            </http:request-builder>
+        </http:request>
+        <logger message="UUID '#[flowVars.ldap_entry_uuid]' updated in Contact '#[flowVars.contact_id]' - #[payload]" level="INFO" doc:name="Logger"/>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-variable variableName="state" value="#['UPDATE_LDAP_UUID']" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+    </sub-flow>
+    <sub-flow name="contacts_match_crm_ldap">
+        <foreach doc:name="For Each - LDAP Contacts" collection="#[flowVars.ldap_contacts]">
+            <scripting:component doc:name="Groovy - LDAP Entry HashMap">
+                <scripting:script engine="Groovy"><![CDATA[Map<String, String> ldap_entry_hm = new LinkedHashMap<String, String>();
+
+String dn = payload.getDn();
+String entryUUID = (payload.getAttributes()).getAttribute("entryUUID").value;
+String mail = (payload.getAttributes()).getAttribute("mail").value;
+String sn = (payload.getAttributes()).getAttribute("sn").value;
+String cn = (payload.getAttributes()).getAttribute("cn").value;
+String externalId = (payload.getAttributes()).getAttribute("x-be-viaa-externalId").value;
+
+ldap_entry_hm.put("dn",dn);
+ldap_entry_hm.put("entryUUID",entryUUID);
+ldap_entry_hm.put("mail",mail);
+ldap_entry_hm.put("sn",sn);
+ldap_entry_hm.put("cn",cn);
+ldap_entry_hm.put("x-be-viaa-externalId",externalId);
+
+return ldap_entry_hm
+]]></scripting:script>
+            </scripting:component>
+            <set-variable variableName="ldap_entry_hm" value="#[payload]" doc:name="Variable - ldap_entry_hm"/>
+            <set-variable variableName="crm_entry_found" value="false" doc:name="crm_entry_found = false"/>
+            <foreach collection="crm_contacts" doc:name="For Each - CRM Contacts">
+                <choice doc:name="Check if Entry LDAP-CRM Matches">
+                    <when expression="#[payload[&quot;id&quot;] == flowVars.ldap_entry_hm[&quot;x-be-viaa-externalId&quot;]]">
+                        <scripting:component doc:name="Found - LDAP Update">
+                            <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"update")
+
+return payload]]></scripting:script>
+                        </scripting:component>
+                        <scripting:component doc:name="Remove entry from CRM Contact List">
+                            <scripting:script engine="Groovy"><![CDATA[flowVars.crm_contacts.remove(payload["id"])
+
+return payload]]></scripting:script>
+                        </scripting:component>
+                        <set-variable variableName="crm_entry_found" value="true" doc:name="crm_entry_found = true"/>
+                    </when>
+                    <otherwise>
+                        <logger level="INFO" doc:name="Not Found - Do Nothing - Continue"/>
+                    </otherwise>
+                </choice>
+            </foreach>
+            <choice doc:name="CRM Entry Found?">
+                <when expression="#[flowVars.crm_entry_found == true]">
+                    <logger level="INFO" doc:name="Do Nothing - Continue"/>
+                </when>
+                <otherwise>
+                    <scripting:component doc:name="Not Found - LDAP Delete">
+                        <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"delete")
+
+return payload]]></scripting:script>
+                    </scripting:component>
+                </otherwise>
+            </choice>
+        </foreach>
+        <choice doc:name="CRM Contact List is Empty">
+            <when expression="#[crm_contacts.isEmpty() == false]">
+                <foreach collection="crm_contacts" doc:name="For Each CRM Contact List">
+                    <scripting:component doc:name="True LDAP Create Entry">
+                        <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(payload.id,"create")
+
+return payload]]></scripting:script>
+                    </scripting:component>
+                </foreach>
+            </when>
+            <otherwise>
+                <logger level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+        <set-variable variableName="state" value="CONTACTS_DETERMINE_LDAP_ACTIONS" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
     </sub-flow>
 </mule>

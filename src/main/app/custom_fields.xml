@@ -7,7 +7,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<sub-flow name="get_custom_fields">
 
-		<http:request config-ref="HTTP_Request_Configuration" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
+		<http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
             <http:request-builder>
                 <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
                 <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
@@ -23,7 +23,7 @@ payload]]></dw:set-payload>
 		</dw:transform-message>
 		<set-variable variableName="custom_fields" value="#[payload]" doc:name="Variable - custom_fields"/>
         <set-variable variableName="state" value="#['GET_CUSTOM_FIELDS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - GET_CUSTOM_FIELDS"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
 	</sub-flow>
 	<flow name="get_custom_field_id" initialState="stopped">
 		<dw:transform-message doc:name="Transform Message - id">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -10,7 +10,9 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
-http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
  <ldap:config
     	name="LDAP_Configuration"
     	authDn="${ldap.principal_dn}"
@@ -28,7 +30,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <context:property-placeholder location="${mule.env}.properties"/>
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
     <sub-flow name="ldap_add_organazation">
-        <flow-ref name="ldap_prepare_call" doc:name="Prepare For LDAP Call"/>
+        <flow-ref name="ldap_prepare_call_organization" doc:name="Prepare For LDAP Call"/>
 
         <ldap:add config-ref="LDAP_Configuration" doc:name="Add LDAPEntry"/>
         <set-variable variableName="state" value="#['LDAP_ENTRY_ADD']" doc:name="Variable - state"/>
@@ -37,7 +39,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 
     </sub-flow>
     <sub-flow name="ldap_update_organization">
-        <flow-ref name="ldap_prepare_call" doc:name="Prepare For LDAP Call"/>
+        <flow-ref name="ldap_prepare_call_organization" doc:name="Prepare For LDAP Call"/>
 
 
         <ldap:modify config-ref="LDAP_Configuration" doc:name="Modify LDAPEntry"/>
@@ -55,7 +57,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <flow-ref name="log_elastic_search" doc:name="eSearch - LDAP_ENTRY_DELETE"/>
         <set-variable variableName="result" value="#['Company deleted in LDAP']" doc:name="Variable - result"/>
     </sub-flow>
-    <sub-flow name="ldap_prepare_call">
+    <sub-flow name="ldap_prepare_call_organization">
         <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
         <scripting:component doc:name="Create LDAP Entry">
             <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
@@ -77,27 +79,54 @@ if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 return entryToAdd]]></scripting:script>
         </scripting:component>
     </sub-flow>
-    <sub-flow name="get_entry_uuid">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(objectClass=inetOrgPerson)" scope="SUB_TREE" doc:name="Get UUID">
+    <sub-flow name="ldap_prepare_call_contacts">
+        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <scripting:component doc:name="Create LDAP Entry">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
+String object_id = flowVars.object_id;
+String category = flowVars.ldap_business_category;
+String sector = flowVars.ldap_sector;
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["organization","x-be-viaa-organization"]);
+entryToAdd.addAttribute("description", description);
+entryToAdd.addAttribute("x-be-viaa-externalId", object_id);
+entryToAdd.addAttribute("businessCategory", category);
+if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
+
+return entryToAdd]]></scripting:script>
+        </scripting:component>
+    </sub-flow>
+    <sub-flow name="contact_get_entry_uuid">
+        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.contact_id]))" scope="SUB_TREE" doc:name="Get UUID">
             <ldap:attributes>
                 <ldap:attribute>entryUUID</ldap:attribute>
             </ldap:attributes>
         </ldap:search>
-        <logger level="INFO" doc:name="Logger"/>
+        <set-variable variableName="ldap_entry_uuid" value="#[(payload[0].getAttributes()).getAttribute(&quot;entryUUID&quot;).value]" doc:name="Variable - ldap_entry_uuid"/>
     </sub-flow>
     <sub-flow name="ldap_get_all_contacts_for_company">
-        <set-variable variableName="or_number" value="OR-w950m90" doc:name="Variable - TMMMMMMPPPP"/>
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(o=#[flowVars.or_number]))" doc:name="get Contacts for Company" scope="SUB_TREE">
+        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <ldap:search config-ref="LDAP_Configuration" baseDn="#[flowVars.ldap_dn]" filter="(objectClass=inetOrgPerson)" doc:name="get LDAP Contacts for Company" scope="SUB_TREE">
             <ldap:attributes>
                 <ldap:attribute>mail</ldap:attribute>
                 <ldap:attribute>o</ldap:attribute>
                 <ldap:attribute>entryUUID</ldap:attribute>
                 <ldap:attribute>cn</ldap:attribute>
                 <ldap:attribute>sn</ldap:attribute>
+                <ldap:attribute>x-be-viaa-externalId</ldap:attribute>
             </ldap:attributes>
         </ldap:search>
         <set-variable variableName="ldap_contacts" value="#[payload]" doc:name="Variable - ldap_contacts"/>
+        <set-variable variableName="state" value="GET_LDAP_CONTACTS_FOR_COMPANY" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+
     </sub-flow>
+
     <sub-flow name="ldap_check_if_company">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'organization' with 'company id'"/>
         <set-variable variableName="company_excists" value="#[payload.size() == 1]" doc:name="Variable - company_excists"/>
@@ -106,18 +135,99 @@ return entryToAdd]]></scripting:script>
     </sub-flow>
 
     <sub-flow name="ldap_check_if_or_number_and_company">
-
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(o=#[flowVars.or_number])(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="LDAP - Search for 'organization' with 'or number' and 'company id'"/>
-        <choice doc:name="Choice - LDAP Entry Excists?">
-            <when expression="#[payload.size() == 0]">
+        <choice doc:name="Check OR Number">
+            <when expression="#[flowVars.or_number == null]">
+                <logger level="INFO" doc:name="is Empty - Do Nothing"/>
                 <set-variable variableName="ldap_entry_excists" value="false" doc:name="Variable - ldap_entry_excists = false"/>
             </when>
             <otherwise>
-                <set-variable variableName="ldap_entry_excists" value="true" doc:name="Variable - ldap_entry_excists = true"/>
-                <set-variable variableName="ldap_entry_string" value="#[payload[0].toString()]" doc:name="Variable - ldap_entry_string"/>
+                <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(o=#[flowVars.or_number])(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Has value - LDAP - Search for 'organization' with 'or number' and 'company id'"/>
+                <choice doc:name="Choice - LDAP Entry Excists?">
+                    <when expression="#[payload.size() == 0]">
+                        <set-variable variableName="ldap_entry_excists" value="false" doc:name="Variable - ldap_entry_excists = false"/>
+                    </when>
+                    <otherwise>
+                        <set-variable variableName="ldap_entry_excists" value="true" doc:name="Variable - ldap_entry_excists = true"/>
+                        <set-variable variableName="ldap_entry_string" value="#[payload[0].toString()]" doc:name="Variable - ldap_entry_string"/>
+                    </otherwise>
+                </choice>
             </otherwise>
         </choice>
 
 
+
     </sub-flow>
+    <sub-flow name="ldap_contact">
+        <choice doc:name="LDAP Contact Actions ?">
+            <when expression="#[flowVars.ldap_contact_actions.isEmpty() == true]">
+                <logger level="INFO" doc:name="True- Do Nothing"/>
+            </when>
+            <otherwise>
+                <set-payload doc:name="Set Payload" value="#[flowVars.ldap_contact_actions.entrySet()]"/>
+                <foreach doc:name="For Each - LDAP Action">
+                    <set-variable variableName="contact_id" value="#[payload.key]" doc:name="Variable - contact_id"/>
+                    <set-variable variableName="ldap_action" value="#[payload.value]" doc:name="Variable - ldap_action"/>
+                    <flow-ref name="get_contact" doc:name="Get Contact"/>
+                    <choice doc:name="LDAP Action">
+                        <when expression="#[flowVars.ldap_action == &quot;create&quot;]">
+                            <flow-ref name="ldap_contact_add" doc:name="Create - Add Contact"/>
+                        </when>
+                        <when expression="#[flowVars.ldap_action == &quot;update&quot;]">
+                            <flow-ref name="ldap_contact_update" doc:name="Update - Modify Contact"/>
+                        </when>
+                        <when expression="#[flowVars.ldap_action == &quot;delete&quot;]">
+                            <flow-ref name="ldap_contact_delete" doc:name="Delete - Delete Contact"/>
+                        </when>
+                        <otherwise>
+                            <scripting:component doc:name="Throw Error">
+                                <scripting:script engine="Groovy"><![CDATA[throw new IllegalArgumentException('Illegal value of LDAP Action variable')]]></scripting:script>
+                            </scripting:component>
+                        </otherwise>
+                    </choice>
+                </foreach>
+            </otherwise>
+        </choice>
+        <set-variable variableName="state" value="CONTACTS_EXECUTE_LDAP_ACTIONS" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+    </sub-flow>
+    <sub-flow name="ldap_contact_add">
+
+        <flow-ref name="ldap_contact_action_prepare" doc:name="Prepare"/>
+        <ldap:add config-ref="LDAP_Configuration" doc:name="LDAP Add Entry"/>
+        <flow-ref name="contact_get_entry_uuid" doc:name="Contact Get EntryUUID"/>
+        <flow-ref name="contact_set_uuid" doc:name="Contact Set UUID (UserID) in CRM"/>
+
+    </sub-flow>
+    <sub-flow name="ldap_contact_update">
+        <flow-ref name="ldap_contact_action_prepare" doc:name="Prepare"/>
+        <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify Entry"/>
+        <logger level="INFO" doc:name="Logger"/>
+    </sub-flow>
+    <sub-flow name="ldap_contact_delete">
+        <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <ldap:delete config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Delete Entry"/>
+        <logger level="INFO" doc:name="Logger"/>
+    </sub-flow>
+    <sub-flow name="ldap_contact_action_prepare">
+        <flow-ref name="contact_check_required_fields" doc:name="Check Required Fields"/>
+        <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <scripting:component doc:name="LDAP Entry">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
+String sn = flowVars.contact.surname;
+String externalId = flowVars.contact_id;
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
+entryToAdd.addAttribute("cn", cn);
+entryToAdd.addAttribute("sn", sn);
+entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
+
+return entryToAdd]]></scripting:script>
+        </scripting:component>
+    </sub-flow>
+
 </mule>

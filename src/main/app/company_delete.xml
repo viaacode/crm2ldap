@@ -18,8 +18,8 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 ---
 payload]]></dw:set-payload>
         </dw:transform-message>
-        <flow-ref name="set_variables" doc:name="Set Variables"/>
-        <flow-ref name="get_company" doc:name="Get Company"/>
+        <flow-ref name="set_variables" doc:name="set_variables"/>
+        <flow-ref name="get_company" doc:name="get_company"/>
         <set-payload value="#[&quot;Door op deze link &lt;a href=\&quot;&quot; + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;\&quot;&gt;Verwijder Bedrijf - &quot; + flowVars.company.name + &quot;&lt;/a&gt; te klikken bevestigd u het verwijderen van het bedrijf in LDAP.&quot;]" doc:name="Set Mail Body"/>
         <smtp:outbound-endpoint host="${smtp.host}" port="${smtp.port}" user="${smtp.username}" password="${smtp.password}" to="${email.helpdesk.to}" from="${email.from}" subject="Bevestig Verwijderen van Bedrijf in LDAP" responseTimeout="10000" doc:name="SMTP" connector-ref="Gmail"/>
         <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
@@ -27,16 +27,16 @@ payload]]></dw:set-payload>
     <sub-flow name="company_delete_get">
         <logger message="DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
          <set-variable variableName="object_id" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Set  object_id"/>
-        <flow-ref name="get_company" doc:name="Get Company"/>
+        <flow-ref name="get_company" doc:name="get_company"/>
         <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
         <set-variable variableName="state" value="#['COMPANY_DELETE']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - COMPANY DELETE"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
         <choice doc:name="OR Number available?">
             <when expression="#[flowVars.or_number == null]">
                 <set-payload value="#[&quot;Company not deleted because it does not have an OR Number&quot;]" mimeType="text/html" doc:name="Not deleted - No OR Number"/>
             </when>
             <otherwise>
-                <flow-ref name="ldap_delete_organization" doc:name="LDAP Delete Organization"/>
+                <flow-ref name="ldap_delete_organization" doc:name="ldap_delete_organization"/>
                 <set-payload value="#[&quot;Company has been deleted in LDAP&quot;]" mimeType="text/html" doc:name="Company has been deleted in LDAP"/>
             </otherwise>
         </choice>

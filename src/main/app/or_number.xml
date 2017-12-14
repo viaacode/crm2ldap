@@ -13,9 +13,8 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <http:request-config name="HTTP_Request_Configuration_OR" host="${or_number.host}" port="80" basePath="/po" doc:name="HTTP Request Configuration"/>
     <sub-flow name="get_or_number">
         <choice doc:name="Is OR Number available?">
-            <when expression="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;)) != null]">
+            <when expression="#[flowVars.or_number != null]">
                 <logger message="OR number '#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]' is available for '#[flowVars.object_id]'" level="INFO" doc:name="Log - OR is available"/>
-                <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
             </when>
             <otherwise>
                 <http:request config-ref="HTTP_Request_Configuration_OR" path="/noidu_kt5?mint+1" method="GET" doc:name="HTTP - Get Random Number"/>
@@ -25,6 +24,6 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             </otherwise>
         </choice>
         <set-variable variableName="state" value="#['GET_OR_NUMBER']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - GET_OR_NUMBER"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>
