@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ldap http://www.mulesoft.org/schema/mule/ldap/current/mule-ldap.xsd">
+    <sub-flow name="contact_update">
+        <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
+        <dw:transform-message doc:name="JSON to JAVA">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="set_variables" doc:name="Set Variables"/>
+        <flow-ref name="ldap_check_if_contact_excists" doc:name="Check If contact excists in LDAP"/>
+        <choice doc:name="Excists?">
+            <when expression="#[contact_excists == false]">
+                <logger level="INFO" doc:name="FALSE- Stop"/>
+                <set-variable variableName="result" value="Contact does not excists in LDAP" doc:name="Variable - result"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="contact_id" value="#[flowVars.object_id]" doc:name="Set contact_id"/>
+                <flow-ref name="get_contact" doc:name="Get CRM Contact"/>
+                <flow-ref name="contact_check_required_fields" doc:name="Check Required Fields"/>
+                <scripting:component doc:name="LDAP Entry">
+                    <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
+String sn = flowVars.contact.surname;
+String externalId = flowVars.contact_id;
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
+entryToAdd.addAttribute("cn", cn);
+entryToAdd.addAttribute("sn", sn);
+entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
+
+return entryToAdd]]></scripting:script>
+                </scripting:component>
+                <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP - Modify"/>
+                <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated" doc:name="Variable - result"/>
+            </otherwise>
+        </choice>
+        <set-variable variableName="state" value="#['LDAP_CONTACT_UPDATE']" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+    </sub-flow>
+</mule>

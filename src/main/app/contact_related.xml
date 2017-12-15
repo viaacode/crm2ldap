@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
     <sub-flow name="contacts_related_update">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
         <dw:transform-message doc:name="JSON to JAVA">
@@ -16,11 +18,24 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <flow-ref name="set_variables" doc:name="Set Variables"/>
         <flow-ref name="get_company" doc:name="Get Company from CRM"/>
-        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Set or_number"/>
-        <flow-ref name="get_contacts_by_company" doc:name="CRM - Get Company Contacts"/>
-        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get Company Contacts"/>
         <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
-        <flow-ref name="contacts_match_crm_ldap" doc:name="Determine LDAP Actions"/>
-        <flow-ref name="ldap_contact" doc:name="Execute LDAP Actions"/>
+        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Set or_number"/>
+        <choice doc:name="Check if or_number">
+            <when expression="#[flowVars.or_number == null]">
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.object_id,"no_or_stop")
+
+return payload]]></scripting:script>
+                </scripting:component>
+                <logger message="No OR number available" level="INFO" doc:name="No OR Number - Stop"/>
+            </when>
+            <otherwise>
+                <flow-ref name="get_contacts_by_company" doc:name="CRM - Get Company Contacts"/>
+                <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get Company Contacts"/>
+                <flow-ref name="contacts_match_crm_ldap" doc:name="Determine LDAP Actions"/>
+                <flow-ref name="ldap_contact" doc:name="Execute LDAP Actions"/>
+            </otherwise>
+        </choice>
+
     </sub-flow>
 </mule>

@@ -72,10 +72,9 @@ payload]]></dw:set-payload>
                 <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
             </http:request-builder>
         </http:request>
-        <logger message="UUID '#[flowVars.ldap_entry_uuid]' updated in Contact '#[flowVars.contact_id]' - #[payload]" level="INFO" doc:name="Logger"/>
+
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <set-variable variableName="state" value="#['UPDATE_LDAP_UUID']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+
     </sub-flow>
     <sub-flow name="contacts_match_crm_ldap">
         <foreach doc:name="For Each - LDAP Contacts" collection="#[flowVars.ldap_contacts]">
