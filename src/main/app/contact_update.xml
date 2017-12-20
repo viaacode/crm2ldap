@@ -17,8 +17,8 @@ http://www.mulesoft.org/schema/mule/ldap http://www.mulesoft.org/schema/mule/lda
 ---
 payload]]></dw:set-payload>
         </dw:transform-message>
-        <flow-ref name="set_variables" doc:name="Set Variables"/>
-        <flow-ref name="ldap_check_if_contact_excists" doc:name="Check If contact excists in LDAP"/>
+        <flow-ref name="set_variables" doc:name="set_variables"/>
+        <flow-ref name="ldap_check_if_contact_excists" doc:name="ldap_check_if_contact_excists"/>
         <choice doc:name="Excists?">
             <when expression="#[contact_excists == false]">
                 <logger level="INFO" doc:name="FALSE- Stop"/>
@@ -26,14 +26,15 @@ payload]]></dw:set-payload>
             </when>
             <otherwise>
                 <set-variable variableName="contact_id" value="#[flowVars.object_id]" doc:name="Set contact_id"/>
-                <flow-ref name="get_contact" doc:name="Get CRM Contact"/>
-                <flow-ref name="contact_check_required_fields" doc:name="Check Required Fields"/>
+                <flow-ref name="get_contact" doc:name="get_contact"/>
+                <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
                 <scripting:component doc:name="LDAP Entry">
                     <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
 String sn = flowVars.contact.surname;
+//String mail = flowVars.contact.email;
 String externalId = flowVars.contact_id;
 
 LDAPEntry entryToAdd = new LDAPEntry(dn);
@@ -41,15 +42,31 @@ LDAPEntry entryToAdd = new LDAPEntry(dn);
 entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
 entryToAdd.addAttribute("cn", cn);
 entryToAdd.addAttribute("sn", sn);
+//entryToAdd.addAttribute("mail", mail);
 entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
 
 return entryToAdd]]></scripting:script>
                 </scripting:component>
                 <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP - Modify"/>
-                <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated" doc:name="Variable - result"/>
+                <choice doc:name="Check if email has been changed">
+                    <when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
+                        <logger message="Email '#[flowVars.contact.email]' did not change" level="INFO" doc:name="Email did not change - Do Nothing"/>
+                    </when>
+                    <otherwise>
+                        <dw:transform-message doc:name="Modify email in dn">
+                            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+"mail=" ++ (flowVars.ldap_dn replace /^[^,]*/ with flowVars.contact.email)]]></dw:set-payload>
+                        </dw:transform-message>
+                        <set-variable variableName="ldap_dn_new" value="#[payload]" doc:name="Set ldap_dn_new"/>
+                        <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
+                    </otherwise>
+                </choice>
             </otherwise>
         </choice>
+        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated" doc:name="Variable - result"/>
         <set-variable variableName="state" value="#['LDAP_CONTACT_UPDATE']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>

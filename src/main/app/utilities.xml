@@ -10,6 +10,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd">
     <context:property-placeholder location="${mule.env}.properties"/>
     <sub-flow name="set_variables">
+        <set-variable variableName="event_id" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Variable - event_id"/>
         <set-variable variableName="event_type" value="#[payload.event_type]" doc:name="Variable - event_type"/>
         <set-variable variableName="object_type" value="#[payload.object_type]" doc:name="Variable - object_type"/>
         <set-variable variableName="object_id" value="#[payload.object_id]" doc:name="Variable - object_id"/>

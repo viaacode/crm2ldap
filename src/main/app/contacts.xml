@@ -37,7 +37,7 @@ return crm_contacts]]></scripting:script>
         </scripting:component>
         <set-variable variableName="crm_contacts" value="#[payload]" doc:name="Variable - crm_contacts"/>
         <set-variable variableName="state" value="RELATED_CONTACTS_BY_COMPANY" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - RELATED_CONTACTS_BY_COMPANY"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
     <sub-flow name="get_contact">
         <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContact.php" method="GET" doc:name="HTTP - Get Contact">
@@ -148,6 +148,6 @@ return payload]]></scripting:script>
             </otherwise>
         </choice>
         <set-variable variableName="state" value="CONTACTS_DETERMINE_LDAP_ACTIONS" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>

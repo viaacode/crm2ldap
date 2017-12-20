@@ -84,7 +84,7 @@ or must be VIAA"/>
         </choice>
         <choice doc:name="When VIAA">
             <when expression="#[flowVars.category_viaa == true]">
-                <set-variable variableName="ldap_business_category" value="#[&quot;Service Provider&quot;]" doc:name="LDAP Business Category to Service Provider"/>
+                <set-variable variableName="ldap_business_category" value="#[&quot;Content Partner&quot;]" doc:name="LDAP Business Category to Content Partner"/>
             </when>
             <otherwise>
                 <logger message="Not VIAA" level="INFO" doc:name="Do Nothing"/>
