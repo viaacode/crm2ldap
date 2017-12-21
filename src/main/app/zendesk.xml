@@ -10,16 +10,9 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd">
-    <http:request-config name="HTTP_Request_Configuration" doc:name="HTTP Request Configuration">
-        <oauth2:client-credentials-grant-type clientId="114093974253" clientSecret="55ea2d14cdcd3ccdebacf2e64b16a231678a648f810bbc3925b9d6fc22b63f6c">
-            <oauth2:token-request tokenUrl=""/>
-        </oauth2:client-credentials-grant-type>
+    <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443" doc:name="HTTP Request Configuration" basePath="/api/v2">
+        <http:basic-authentication username="${zendesk.email}" password="${zendesk.api_token}"/>
     </http:request-config>
-    <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.host}" port="443" doc:name="HTTP Request Configuration">
-    </http:request-config>
-    <oauth2:token-manager-config name="Zendesk_Token_Manager_Config" objectStore-ref="_defaultInMemoryObjectStore" doc:name="Token Manager Config"/>
-    <quartz:connector name="Quartz" validateConnections="true" doc:name="Quartz"/>
-    <objectstore:config name="zendesk_oauth_token_object_store"  doc:name="ObjectStore: Connector"/>
     <sub-flow name="zendesk_create_ticket">
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0
@@ -33,7 +26,7 @@ http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/m
   }
 }]]></dw:set-payload>
         </dw:transform-message>
-        <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/api/v2/tickets.json" method="POST" doc:name="HTTP">
+        <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP">
             <http:request-builder>
                 <http:header headerName="Content-Type" value="application/json"/>
             </http:request-builder>
