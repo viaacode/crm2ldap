@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:oauth2="http://www.mulesoft.org/schema/mule/oauth2" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:oauth2="http://www.mulesoft.org/schema/mule/oauth2" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -9,27 +9,55 @@ http://www.mulesoft.org/schema/mule/oauth2 http://www.mulesoft.org/schema/mule/o
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
-http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd">
+http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443" doc:name="HTTP Request Configuration" basePath="/api/v2">
-        <http:basic-authentication username="${zendesk.email}" password="${zendesk.api_token}"/>
+        <http:basic-authentication username="${zendesk.email}/token" password="${zendesk.api_token}"/>
     </http:request-config>
     <sub-flow name="zendesk_create_ticket">
-        <dw:transform-message doc:name="Transform Message">
-            <dw:set-payload><![CDATA[%dw 1.0
+        <set-variable variableName="zendesk_assignee_id" value="${zendesk_assignee_id}" doc:name="Variable - zendesk_assignee_id"/>
+        <choice doc:name="Assignee?">
+            <when expression="#[flowVars.zendesk_assignee_id == 'none']">
+                <dw:transform-message doc:name="Ticket without assignee">
+                    <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
   "ticket": {
-    "subject":  "TESTING",
-    "comment":  { "body": "The is a test" },
-    "priority": "urgent"
+    "subject":  flowVars.ticket_subject,
+    "comment":  { "body": flowVars.ticket_body },
+    "priority": "normal"
   }
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP">
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Ticket with assignee">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+  "ticket": {
+    "subject":  flowVars.ticket_subject,
+    "comment":  { "body": flowVars.ticket_body },
+    "priority": "normal",
+    "assignee_id": flowVars.zendesk_assignee_id
+  }
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <logger message="Going to create Zendesk ticket : #[payload]" level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
             <http:request-builder>
                 <http:header headerName="Content-Type" value="application/json"/>
             </http:request-builder>
         </http:request>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-variable variableName="ticket" value="#[payload]" doc:name="Variable - ticket"/>
+        <set-variable variableName="state" value="ZENDESK_TICKET_CREATED" doc:name="state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
     </sub-flow>
 </mule>

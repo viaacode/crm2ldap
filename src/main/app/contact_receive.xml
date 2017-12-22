@@ -19,4 +19,10 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <flow-ref name="contact_update" doc:name="contact_update"/>
         <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
     </flow>
+    <flow name="contact_receive_for_delete">
+        <http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/delete" allowedMethods="GET" doc:name="HTTP - /ldap/contact/delete - GET"/>
+        <logger message="CONTACT DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
+        <flow-ref name="contact_delete" doc:name="Contact Delete"/>
+        <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
+    </flow>
 </mule>

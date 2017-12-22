@@ -22,11 +22,11 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
                 <set-attachment attachmentName="api_group" value="${teamleader_api.group}" contentType="text/plain" doc:name="Attachment - api_group"/>
                 <set-attachment attachmentName="api_secret" value="${teamleader_api.secret}" contentType="text/plain" doc:name="Attachment - api.secret"/>
                 <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
-                <set-attachment attachmentName="company_id" value="#[flowVars.object_id]" contentType="text/plain" doc:name="Attachment - company_id"/>
+                <set-attachment attachmentName="company_id" value="#[(flowVars.object_id).toString()]" contentType="text/plain" doc:name="Attachment - company_id"/>
                 <set-attachment attachmentName="custom_field_${teamleader.custom_field.or_number}" value="#[flowVars.or_number]" contentType="text/plain" doc:name="Attachment - custom_field_ID - OR Number"/>
                 <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateCompany.php" method="POST" doc:name="HTTP - UpdateCompany"/>
                 <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-                <logger message="OR Number '#[flowVars.or_number]' updated in Company '#[flowVars.object_id]' - #[payload]" level="INFO" doc:name="Logger"/>
+                <logger message="OR Number '#[flowVars.or_number]' updated in Company '#[flowVars.object_id]' - #[payload]" level="INFO" doc:name="Logger OR Number Updated in Company"/>
                 <set-variable variableName="state" value="#['UPDATE_OR_NUMBER']" doc:name="Variable"/>
                 <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
             </when>

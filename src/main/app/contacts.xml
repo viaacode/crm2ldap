@@ -74,6 +74,8 @@ payload]]></dw:set-payload>
         </http:request>
 
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <set-variable variableName="state" value="CONTACT_UUID_CLEARED" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
 
     </sub-flow>
     <sub-flow name="contacts_match_crm_ldap">

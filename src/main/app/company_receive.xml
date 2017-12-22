@@ -21,7 +21,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     </flow>
     <flow name="HTTP-/ldap/company/delete_get">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/delete" allowedMethods="GET" doc:name="HTTP delete - GET"/>
-        <logger message="DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
+        <logger message="COMPANY DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
         <flow-ref name="company_delete_get" doc:name="Company Delete Get"/>
     </flow>
     <flow name="HTTP-/ldap/company/delete_post">

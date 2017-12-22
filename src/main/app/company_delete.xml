@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <smtp:gmail-connector name="Gmail" contentType="text/html" validateConnections="true" doc:name="Gmail"/>
     <sub-flow name="company_delete">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
@@ -20,8 +21,20 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="get_company" doc:name="get_company"/>
-        <set-payload value="#[&quot;Door op deze link &lt;a href=\&quot;&quot; + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;\&quot;&gt;Verwijder Bedrijf - &quot; + flowVars.company.name + &quot;&lt;/a&gt; te klikken bevestigd u het verwijderen van het bedrijf in LDAP.&quot;]" doc:name="Set Mail Body"/>
-        <smtp:outbound-endpoint host="${smtp.host}" port="${smtp.port}" user="${smtp.username}" password="${smtp.password}" to="${email.helpdesk.to}" from="${email.from}" subject="Bevestig Verwijderen van Bedrijf in LDAP" responseTimeout="10000" doc:name="SMTP" connector-ref="Gmail"/>
+        <set-variable variableName="href_link" value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + ')']" doc:name="Variable - href_link"/>
+        <choice doc:name="Choice - environmnet">
+            <when expression="#[flowVars.environment == 'production']">
+                <set-variable variableName="ticket_body" value="#['- ' + flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP. Moet dit bedrijf ook in LDAP verwijderd worden?' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="ticket_body for Production"/>
+                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd']" doc:name="Set ticket_subject for Production"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="ticket_body" value="#['- ' + flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP. Moet dit bedrijf ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- DIt is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Set ticket_body"/>
+                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd (TEST)']" doc:name="Set ticket_subject"/>
+            </otherwise>
+        </choice>
+        <logger message="Going to create a Zendesk ticket to delete company : #[flowVars.company.name]" level="INFO" doc:name="Logger"/>
+        <flow-ref name="zendesk_create_ticket" doc:name="Create Zendesk Ticket"/>
+
         <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
     </sub-flow>
     <sub-flow name="company_delete_get">
