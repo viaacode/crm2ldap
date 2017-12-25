@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443" doc:name="HTTP Request Configuration" basePath="/api/v2">
+    <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443" doc:name="HTTP Request Configuration" basePath="/api/v2" proxy-ref="Proxy_Configuration">
         <http:basic-authentication username="${zendesk.email}/token" password="${zendesk.api_token}"/>
     </http:request-config>
     <sub-flow name="zendesk_create_ticket">
