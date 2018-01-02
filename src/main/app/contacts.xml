@@ -39,6 +39,20 @@ return crm_contacts]]></scripting:script>
         <set-variable variableName="state" value="RELATED_CONTACTS_BY_COMPANY" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
+    <sub-flow name="contact_get_or_number_from_company">
+        <set-variable variableName="object_id_org" value="#[flowVars.object_id]" doc:name="Variable - object_id_org"/>
+        <set-variable variableName="object_id" value="#[flowVars.contact.linked_company_ids]" doc:name="Variable - object_id (company_id)"/>
+        <choice doc:name="Check If linked company">
+            <when expression="#[flowVars.object_id == null || flowVars.object_id == '']">
+                <logger message="Contact has no linked companies. " level="INFO" doc:name="False - Do Nothing"/>
+            </when>
+            <otherwise>
+                <flow-ref name="get_company" doc:name="Get Company"/>
+                <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
+            </otherwise>
+        </choice>
+        <set-variable variableName="object_id" value="#[flowVars.object_id_org]" doc:name="Variable - object_id (restore)"/>
+    </sub-flow>
     <sub-flow name="get_contact">
         <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContact.php" method="GET" doc:name="HTTP - Get Contact">
             <http:request-builder>
