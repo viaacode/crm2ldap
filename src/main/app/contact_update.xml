@@ -33,17 +33,21 @@ payload]]></dw:set-payload>
 
 String dn = flowVars.ldap_dn;
 String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
+String givenName = flowVars.contact.forename;
 String sn = flowVars.contact.surname;
 //String mail = flowVars.contact.email;
 String externalId = flowVars.contact_id;
+String o = flowVars.or_number;
 
 LDAPEntry entryToAdd = new LDAPEntry(dn);
 
 entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
 entryToAdd.addAttribute("cn", cn);
+entryToAdd.addAttribute("givenName", givenName);
 entryToAdd.addAttribute("sn", sn);
 //entryToAdd.addAttribute("mail", mail);
 entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
+entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
                 </scripting:component>
@@ -51,6 +55,7 @@ return entryToAdd]]></scripting:script>
                 <choice doc:name="Check if email has been changed">
                     <when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
                         <logger message="Email '#[flowVars.contact.email]' did not change" level="INFO" doc:name="Email did not change - Do Nothing"/>
+                        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] is not updated because email did not change" doc:name="Variable - result"/>
                     </when>
                     <otherwise>
                         <dw:transform-message doc:name="Modify email in dn">
@@ -61,11 +66,12 @@ return entryToAdd]]></scripting:script>
                         </dw:transform-message>
                         <set-variable variableName="ldap_dn_new" value="#[payload]" doc:name="Set ldap_dn_new"/>
                         <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
+                        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated" doc:name="Variable - result"/>
                     </otherwise>
                 </choice>
             </otherwise>
         </choice>
-        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated" doc:name="Variable - result"/>
+
         <set-variable variableName="state" value="#['LDAP_CONTACT_UPDATE']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>

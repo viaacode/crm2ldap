@@ -211,7 +211,7 @@ return entryToAdd]]></scripting:script>
             </otherwise>
         </choice>
         <choice doc:name="Check if Zendesk Ticket">
-            <when expression="#[create_zendesk_ticket == true]">
+            <when expression="#[flowVars.create_zendesk_ticket == true]">
                 <flow-ref name="zendesk_create_ticket" doc:name="Create Zendesk Ticket"/>
             </when>
             <otherwise>
@@ -264,15 +264,19 @@ return entryToAdd]]></scripting:script>
 
 String dn = flowVars.ldap_dn;
 String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
+String givenName = flowVars.contact.forename;
 String sn = flowVars.contact.surname;
 String externalId = flowVars.contact_id;
+String o = flowVars.or_number;
 
 LDAPEntry entryToAdd = new LDAPEntry(dn);
 
 entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
 entryToAdd.addAttribute("cn", cn);
+entryToAdd.addAttribute("givenName", givenName);
 entryToAdd.addAttribute("sn", sn);
 entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
+entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
         </scripting:component>
