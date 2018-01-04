@@ -43,8 +43,8 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
                 <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
             </http:request-builder>
         </http:request>
-        <set-payload value="#[payload]" mimeType="application/json" doc:name="Set Payload - MIME Type - application/json"/>
-        <dw:transform-message doc:name="Transform Message - payload">
+        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
+        <dw:transform-message doc:name="LinkedHashMap">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---

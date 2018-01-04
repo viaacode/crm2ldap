@@ -29,9 +29,27 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
    	</ldap:config>
     <context:property-placeholder location="${mule.env}.properties"/>
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
-    <sub-flow name="ldap_add_organazation">
-        <flow-ref name="ldap_prepare_call_organization" doc:name="ldap_prepare_call_organization"/>
+    <sub-flow name="ldap_add_organization">
+        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <scripting:component doc:name="Create LDAP Entry">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
+String dn = flowVars.ldap_dn;
+String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
+String object_id = flowVars.object_id;
+String category = flowVars.ldap_business_category;
+String sector = flowVars.ldap_sector;
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["organization","x-be-viaa-organization"]);
+entryToAdd.addAttribute("description", description);
+entryToAdd.addAttribute("x-be-viaa-externalId", object_id);
+entryToAdd.addAttribute("businessCategory", category);
+if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
+
+return entryToAdd]]></scripting:script>
+        </scripting:component>
         <ldap:add config-ref="LDAP_Configuration" doc:name="Add LDAPEntry"/>
         <set-variable variableName="state" value="#['LDAP_ENTRY_ADD']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
@@ -39,13 +57,32 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 
     </sub-flow>
     <sub-flow name="ldap_update_organization">
-        <flow-ref name="ldap_prepare_call_organization" doc:name="ldap_prepare_call_organization"/>
+        <scripting:component doc:name="Create LDAP Entry">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
+String object_id = flowVars.object_id;
+String category = flowVars.ldap_business_category;
+String sector = flowVars.ldap_sector;
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["organization","x-be-viaa-organization"]);
+entryToAdd.addAttribute("description", description);
+entryToAdd.addAttribute("x-be-viaa-externalId", object_id);
+entryToAdd.addAttribute("businessCategory", category);
+if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
+
+return entryToAdd]]></scripting:script>
+        </scripting:component>
 
 
         <ldap:modify config-ref="LDAP_Configuration" doc:name="Modify LDAPEntry"/>
         <set-variable variableName="state" value="#['LDAP_ENTRY_UPDATE']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
         <set-variable variableName="result" value="#['Company updated in LDAP']" doc:name="Variable - result"/>
+        <flow-ref name="ldap_organization_remane_dn" doc:name="Rename DN of Company if OR number has been changed"/>
 
 
     </sub-flow>
@@ -78,6 +115,21 @@ if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 
 return entryToAdd]]></scripting:script>
         </scripting:component>
+    </sub-flow>
+    <sub-flow name="ldap_organization_remane_dn">
+        <choice doc:name="Check if DN needs to be renamed">
+            <when expression="#[flowVars.update_or_number_in_teamleader == true &amp;&amp; flowVars.event_type == 'company_edited']">
+                <set-variable variableName="ldap_dn_new" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Variable -ldap_dn_new"/>
+                <logger message="Renaming Company DN from #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]" level="INFO" doc:name="Renaming DN"/>
+                <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
+                <set-variable variableName="state" value="RENAME_COMPANY_DN" doc:name="Variable - state"/>
+                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+                <set-variable variableName="result" value="Company has nee updated and DN has beed renamed to #[flowVars.ldap_dn_new]" doc:name="Variable - result"/>
+            </when>
+            <otherwise>
+                <logger message="No DN rename needed" level="INFO" doc:name="No DN rename needed"/>
+            </otherwise>
+        </choice>
     </sub-flow>
     <sub-flow name="ldap_prepare_call_contacts">
         <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
@@ -138,6 +190,14 @@ return entryToAdd]]></scripting:script>
     <sub-flow name="ldap_check_if_company">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'organization' with 'company id'"/>
         <set-variable variableName="company_excists" value="#[payload.size() == 1]" doc:name="Variable - company_excists"/>
+        <choice doc:name="company_excists">
+            <when expression="#[company_excists == true]">
+                <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
+            </when>
+            <otherwise>
+                <logger message="Company (&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id])) does not excist in LDAP" level="INFO" doc:name="FALSE - Do Nothing"/>
+            </otherwise>
+        </choice>
         <set-variable variableName="state" value="#['LDAP_CHECK_IF_COMPANY_EXISTS']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>

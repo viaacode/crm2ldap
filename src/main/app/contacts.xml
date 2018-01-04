@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
     <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
-    <sub-flow name="get_contacts_by_company">
+ <sub-flow name="get_contacts_by_company">
         <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContactsByCompany.php" method="GET" doc:name="HTTP - Get Contacts By Company">
             <http:request-builder>
                 <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
@@ -61,8 +61,8 @@ return crm_contacts]]></scripting:script>
                 <http:query-param paramName="contact_id" value="#[flowVars.contact_id]"/>
             </http:request-builder>
         </http:request>
-        <dw:transform-message doc:name="Transform Message" metadata:id="388405f4-86ce-40c2-9551-701426cb7242">
-            <dw:input-payload mimeType="application/json"/>
+        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
+        <dw:transform-message doc:name="LinkedHashMap">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---

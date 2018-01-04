@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/slack http://www.mulesoft.org/schema/mule/sl
             <set-variable variableName="slack_message" value="#['*EXCEPTION :* ' + flowVars.error_message + &quot;\n\n&quot; + '*CAUSE :* ' + flowVars.error_cause + &quot;\n\n&quot; + '*DETAILS :* ' + flowVars.kibana_link]" doc:name="Variable - slack_message"/>
             <logger message="SLACK MESSAGE : #[flowVars.slack_message]" level="INFO" doc:name="Logger"/>
             <slack:post-message config-ref="Slack__Token_Configuration" doc:name="Slack Notification" channelId="${slack.channel_id.exceptions}" message="#[flowVars.slack_message]" username="CRM2LDAP - EXCEPTION"/>
-            <set-property propertyName="http.status" value="400" doc:name="Property - 400"/>
+            <set-property propertyName="http.status" value="200" doc:name="Property - 200 - We give always back so that CRM does not retry"/>
             <set-payload value="#[flowVars.error_message + &quot;\n&quot;+ flowVars.error_cause]" doc:name="Set Payload - error_message"/>
                  </catch-exception-strategy>
     </choice-exception-strategy>

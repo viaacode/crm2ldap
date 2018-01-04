@@ -12,9 +12,9 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <http:request-config name="HTTP_Request_Configuration_OR" host="${or_number.host}" port="80" basePath="/po" doc:name="HTTP Request Configuration"/>
     <sub-flow name="get_or_number">
-        <choice doc:name="Is OR Number available?">
-            <when expression="#[flowVars.or_number != null]">
-                <logger message="OR number '#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]' is available for '#[flowVars.object_id]'" level="INFO" doc:name="Log - OR is available"/>
+        <choice doc:name="Is OR Number not available? Or company is added? Then get OR Number">
+            <when expression="#[flowVars.or_number != null &amp;&amp; flowVars.event_type != 'company_added']">
+                <logger message="OR number '#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]' is available for '#[flowVars.object_id]'" level="INFO" doc:name="Log - OR is available or when company added always generate new or number"/>
             </when>
             <otherwise>
                 <http:request config-ref="HTTP_Request_Configuration_OR" path="/noidu_kt5?mint+1" method="GET" doc:name="HTTP - Get Random Number"/>
