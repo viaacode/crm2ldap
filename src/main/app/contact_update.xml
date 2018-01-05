@@ -28,7 +28,7 @@ payload]]></dw:set-payload>
                 <set-variable variableName="contact_id" value="#[flowVars.object_id]" doc:name="Set contact_id"/>
                 <flow-ref name="get_contact" doc:name="get_contact"/>
                 <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
-                <flow-ref name="contact_get_or_number_from_company" doc:name="Get OR Number"/>
+                <flow-ref name="contact_get_or_number_from_company" doc:name="contact_get_or_number_from_company"/>
                 <scripting:component doc:name="LDAP Entry">
                     <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 

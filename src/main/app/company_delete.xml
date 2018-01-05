@@ -9,7 +9,6 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <smtp:gmail-connector name="Gmail" contentType="text/html" validateConnections="true" doc:name="Gmail"/>
     <sub-flow name="company_delete">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
         <dw:transform-message doc:name="JSON to JAVA" metadata:id="a132686a-007f-4a77-9674-1826616d4c7d">
@@ -33,7 +32,7 @@ payload]]></dw:set-payload>
             </otherwise>
         </choice>
         <logger message="Going to create a Zendesk ticket to delete company : #[flowVars.company.name]" level="INFO" doc:name="Logger"/>
-        <flow-ref name="zendesk_create_ticket" doc:name="Create Zendesk Ticket"/>
+        <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
 
         <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
     </sub-flow>

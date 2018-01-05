@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -82,7 +82,7 @@ return entryToAdd]]></scripting:script>
         <set-variable variableName="state" value="#['LDAP_ENTRY_UPDATE']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
         <set-variable variableName="result" value="#['Company updated in LDAP']" doc:name="Variable - result"/>
-        <flow-ref name="ldap_organization_remane_dn" doc:name="Rename DN of Company if OR number has been changed"/>
+        <flow-ref name="ldap_organization_remane_dn" doc:name="ldap_organization_remane_dn"/>
 
 
     </sub-flow>
@@ -154,7 +154,7 @@ return entryToAdd]]></scripting:script>
         </scripting:component>
     </sub-flow>
     <sub-flow name="contact_get_entry_uuid">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.contact_id]))" scope="SUB_TREE" doc:name="Get UUID">
+        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.contact_id])(o=#[flowVars.or_number]))" scope="SUB_TREE" doc:name="Get UUID">
             <ldap:attributes>
                 <ldap:attribute>entryUUID</ldap:attribute>
             </ldap:attributes>
@@ -166,8 +166,9 @@ return entryToAdd]]></scripting:script>
             <ldap:attributes/>
         </ldap:search>
         <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
+        <set-variable variableName="contact_id" value="#[(payload[0].getAttributes()).getAttribute(&quot;x-be-viaa-externalId&quot;).value]" doc:name="Variable - contact_id"/>
         <set-variable variableName="state" value="GET_CONTACT_WITH_UUID" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
     <sub-flow name="ldap_get_all_contacts_for_company">
         <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
@@ -272,7 +273,7 @@ return entryToAdd]]></scripting:script>
         </choice>
         <choice doc:name="Check if Zendesk Ticket">
             <when expression="#[flowVars.create_zendesk_ticket == true]">
-                <flow-ref name="zendesk_create_ticket" doc:name="Create Zendesk Ticket"/>
+                <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
             </when>
             <otherwise>
                 <logger message="No zendesk ticket" level="INFO" doc:name="Logger - do Nothing"/>
@@ -296,7 +297,20 @@ return entryToAdd]]></scripting:script>
 
     </sub-flow>
     <sub-flow name="ldap_contact_delete_ticket">
-        <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.contact.id + ')']" doc:name="Variable - href_link"/>
+        <dw:transform-message doc:name="get uuid value from contact user id">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	uuid: lookup("get_custom_field_values_contact", 
+            {
+                custom_field_id: p('teamleader.custom_field.contact.user_id')
+            }
+       )
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable variableName="uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid"/>
+        <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
         <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Dit is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
@@ -311,8 +325,31 @@ return entryToAdd]]></scripting:script>
     <sub-flow name="ldap_contact_delete">
 
         <ldap:delete config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Delete Entry"/>
-        <set-variable variableName="ldap_entry_uuid" value="#['']" doc:name="Variable - ldap_entry_uuid to blank"/>
-        <flow-ref name="contact_set_uuid" doc:name="contact_set_uuid"/>
+        <flow-ref name="get_contact" doc:name="Get Contact from CRM"/>
+        <dw:transform-message doc:name="get uuid value from contact user id">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	uuid: lookup("get_custom_field_values_contact", 
+            {
+                custom_field_id: p('teamleader.custom_field.contact.user_id')
+            }
+       )
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <set-variable variableName="crm_uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - crm_uuid"/>
+        <choice doc:name="compare crm and ldap uuid">
+            <when expression="#[flowVars.crm_uuid != flowVars.contact_uuid]">
+                <set-variable variableName="result" value="#['UUIDs in LDAP and CRM are not the same no need to clear the CRM UUID]" doc:name="Variable - result"/>
+                <logger level="INFO" doc:name="Not the same - do nothing" message="UUIDs in LDAP and CRM are not the same. No need to clear the CRM UUID"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="ldap_entry_uuid" value="#['']" doc:name="Variable - ldap_entry_uuid to blank"/>
+                <flow-ref name="contact_set_uuid" doc:name="Blank uuid in crm"/>
+                <set-variable variableName="result" value="#['UUID is cleared in CRM']" doc:name="Variable - result"/>
+            </otherwise>
+        </choice>
 
     </sub-flow>
     <sub-flow name="ldap_contact_action_prepare">

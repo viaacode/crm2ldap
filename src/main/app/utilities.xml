@@ -17,6 +17,6 @@ http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/q
         <set-variable variableName="hostname" value="#[server.host]" doc:name="Variable - hostname"/>
         <set-variable variableName="environment" value="${mule.env}" doc:name="Variable - environment"/>
         <set-variable variableName="state" value="#['RECEIVED_WEBHOOK']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - RECEIVED_WEBHOOK"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>

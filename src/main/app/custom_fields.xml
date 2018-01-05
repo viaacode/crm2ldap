@@ -65,6 +65,40 @@ payload splitBy ","]]></dw:set-payload>
 			</otherwise>
 		</choice>
 	</flow>
+	
+		<flow name="get_custom_field_values_contact" >
+		<dw:transform-message doc:name="Transform Message - custom_field_values">
+			<dw:set-variable variableName="custom_field_values"><![CDATA[%dw 1.0
+%output application/java
+---
+{
+}]]></dw:set-variable>
+		</dw:transform-message>
+        <set-variable variableName="custom_field_id" value="#[payload.custom_field_id]" doc:name="Variable - custom_field_id"/>
+		<dw:transform-message doc:name="Transform Message - value of custom field - contact">
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.contact.custom_fields[payload.custom_field_id]]]></dw:set-payload>
+		</dw:transform-message>
+		<choice doc:name="Choice - check for empty payload">
+			<when expression="payload != null &amp;&amp; payload.length() &gt; 0">
+
+				<dw:transform-message doc:name="Transform Message - Split  to ArrayList">
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload splitBy ","]]></dw:set-payload>
+				</dw:transform-message>
+
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger - isEmpty"/>
+			</otherwise>
+		</choice>
+	</flow>
+	
+	
     <sub-flow name="sector">
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0

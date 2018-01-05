@@ -9,24 +9,24 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <flow name="HTTP-/ldap/company/create">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/create" allowedMethods="POST" doc:name="HTTP create"/>
-        <flow-ref name="company_create_update" doc:name="Company Creat Update"/>
-        <flow-ref name="update_company_with_or_number" doc:name="Update OR Number"/>
+        <flow-ref name="company_create_update" doc:name="company_create_update"/>
+        <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Set Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/update">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/update" allowedMethods="POST" doc:name="HTTP update"/>
-        <flow-ref name="company_create_update" doc:name="Company Creat Update"/>
-        <flow-ref name="update_company_with_or_number" doc:name="Update OR Number"/>
+        <flow-ref name="company_create_update" doc:name="company_create_update"/>
+        <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/delete_get">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/delete" allowedMethods="GET" doc:name="HTTP delete - GET"/>
         <logger message="COMPANY DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
-        <flow-ref name="company_delete_get" doc:name="Company Delete Get"/>
+        <flow-ref name="company_delete_get" doc:name="company_delete_get"/>
     </flow>
     <flow name="HTTP-/ldap/company/delete_post">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/delete" allowedMethods="POST" doc:name="HTTP delete - POST"/>
-        <flow-ref name="company_delete" doc:name="Company Delete"/>
+        <flow-ref name="company_delete" doc:name="company_delete"/>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
 </mule>
