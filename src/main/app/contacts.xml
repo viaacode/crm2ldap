@@ -71,9 +71,9 @@ payload]]></dw:set-payload>
         <set-variable variableName="contact" value="#[payload]" doc:name="Set Variable - contact"/>
     </sub-flow>
     <sub-flow name="contact_check_required_fields">
-        <validation:is-not-empty config-ref="Validation_Configuration" value="#[flowVars.contact.forename]" doc:name="Validation - Forename must have a value" message="Contact Forename is Empty"/>
-        <validation:is-not-empty config-ref="Validation_Configuration" value="#[flowVars.contact.surname]" doc:name="Validation - Surname must have a value" message="Contact Surename is Empty"/>
-        <validation:is-email config-ref="Validation_Configuration" email="#[flowVars.contact.email]" doc:name="Validation - Must have a valid email address" message="Contact must have a valid emal address"/>
+        <validation:is-not-empty config-ref="Validation_Configuration" value="#[payload.forename]" doc:name="Validation - Forename must have a value" message="Contact Forename is Empty"/>
+        <validation:is-not-empty config-ref="Validation_Configuration" value="#[payload.surname]" doc:name="Validation - Surname must have a value" message="Contact Surename is Empty"/>
+        <validation:is-email config-ref="Validation_Configuration" email="#[payload.email]" doc:name="Validation - Must have a valid email address" message="Contact must have a valid emal address"/>
     </sub-flow>
     <sub-flow name="contact_set_uuid">
         <set-payload value="#['']" doc:name="Set Payload - Empty"/>

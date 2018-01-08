@@ -204,16 +204,8 @@ return entryToAdd]]></scripting:script>
     </sub-flow>
     <sub-flow name="ldap_check_if_contact_excists">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'inetOrgPerson' with 'x-be-viaa-externalId'" scope="SUB_TREE"/>
-        <set-variable variableName="contact_excists" value="#[payload.size() == 1]" doc:name="Variable - contact_excists"/>
-        <choice doc:name="Contact Excists">
-            <when expression="#[flowVars.contact_excists == false]">
-                <logger message="LDAP entry does not excists" level="INFO" doc:name="False - do Nothing"/>
-            </when>
-            <otherwise>
-                <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
-                <set-variable variableName="ldap_mail" value="#[(payload[0].getAttributes()).getAttribute(&quot;mail&quot;).value]" doc:name="Variable - ldap_mail"/>
-            </otherwise>
-        </choice>
+        <set-variable variableName="ldap_contact_excists" value="#[payload.size() &gt;= 1]" doc:name="Variable - ldap_contact_excists"/>
+        <set-variable variableName="ldap_contacts" value="#[payload]" doc:name="Variable - ldap_contacts"/>
         <set-variable variableName="state" value="#['LDAP_CHECK_IF_CONTACT_EXISTS']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>

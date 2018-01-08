@@ -20,17 +20,22 @@ payload]]></dw:set-payload>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="ldap_check_if_contact_excists" doc:name="ldap_check_if_contact_excists"/>
         <choice doc:name="Excists?">
-            <when expression="#[flowVars.contact_excists == false]">
+            <when expression="#[flowVars.ldap_contact_excists == false]">
                 <logger level="INFO" doc:name="FALSE- Stop"/>
                 <set-variable variableName="result" value="Contact does not excists in LDAP" doc:name="Variable - result"/>
             </when>
             <otherwise>
                 <set-variable variableName="contact_id" value="#[flowVars.object_id]" doc:name="Set contact_id"/>
-                <flow-ref name="get_contact" doc:name="get_contact"/>
+                <flow-ref name="get_contact" doc:name="Get CRM Contact"/>
                 <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
                 <flow-ref name="contact_get_or_number_from_company" doc:name="contact_get_or_number_from_company"/>
-                <scripting:component doc:name="LDAP Entry">
-                    <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+                <set-variable variableName="state" value="LDAP_BEFORE_UPDATE" doc:name="Variable - state"/>
+                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+                <foreach doc:name="For Each - ldap_contact" collection="#[flowVars.ldap_contacts]">
+                    <set-variable variableName="ldap_dn" value="#[payload.getDn()]" doc:name="Variable - ldap_dn"/>
+                    <set-variable variableName="ldap_mail" value="#[(payload.getAttributes()).getAttribute(&quot;mail&quot;).value]" doc:name="Variable - ldap_mail"/>
+                    <scripting:component doc:name="LDAP Entry">
+                        <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
@@ -51,19 +56,20 @@ entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
 entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
-                </scripting:component>
-                <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP - Modify"/>
-                <choice doc:name="Check if email has been changed">
-                    <when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
-                        <logger message="Email '#[flowVars.contact.email]' did not change" level="INFO" doc:name="Email did not change - Do Nothing"/>
-                        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] is updated (email did not change)" doc:name="Variable - result"/>
-                    </when>
-                    <otherwise>
-                        <set-variable variableName="ldap_dn_new" value="#[flowVars.ldap_dn.replace(flowVars.ldap_mail, flowVars.contact.email)]" doc:name="Variable -ldap_dn_new replace email"/>
-                        <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
-                        <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated with new dn number because email address changed" doc:name="Variable - result"/>
-                    </otherwise>
-                </choice>
+                    </scripting:component>
+                    <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP - Modify"/>
+                    <choice doc:name="Check if email has been changed">
+                        <when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
+                            <logger message="Email '#[flowVars.contact.email]' did not change" level="INFO" doc:name="Email did not change - Do Nothing"/>
+                            <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] is updated (email did not change)" doc:name="Variable - result"/>
+                        </when>
+                        <otherwise>
+                            <set-variable variableName="ldap_dn_new" value="#[flowVars.ldap_dn.replace(flowVars.ldap_mail, flowVars.contact.email)]" doc:name="Variable -ldap_dn_new replace email"/>
+                            <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
+                            <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated with new dn number because email address changed" doc:name="Variable - result"/>
+                        </otherwise>
+                    </choice>
+                </foreach>
             </otherwise>
         </choice>
 
