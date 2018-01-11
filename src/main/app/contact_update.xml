@@ -69,6 +69,7 @@ return entryToAdd]]></scripting:script>
                             <set-variable variableName="result" value="LDAP Entry #[flowVars.contact_id] updated with new dn number because email address changed" doc:name="Variable - result"/>
                         </otherwise>
                     </choice>
+                    <flow-ref name="ldap_contact_check_mail" doc:name="eldap_contact_check_mail"/>
                 </foreach>
             </otherwise>
         </choice>

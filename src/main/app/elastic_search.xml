@@ -16,12 +16,14 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 --- 
-flowVars mapObject {
+flowVars filter ($$ != "rootMessage" or $$ != "counter" or $$ != "jobData" or $$ != "jobConfig") mapObject {
     '$$': $
-}]]></dw:set-payload>
+} ]]></dw:set-payload>
         </dw:transform-message>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="#[payload]" level="INFO" doc:name="Debug message"/>
-        <http:request config-ref="elastic_search" path="crm2ldap/events" method="POST" doc:name="POST event to ES"/>
+        <logger message="ESEARCH MESSAGE : #[payload]" level="INFO" doc:name="Debug message"/>
+        <until-successful maxRetries="5" doc:name="Until Successful" synchronous="true">
+            <http:request config-ref="elastic_search" path="crm2ldap/events" method="POST" doc:name="POST event to ES"/>
+        </until-successful>
     </sub-flow>
 </mule>

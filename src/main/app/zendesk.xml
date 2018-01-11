@@ -49,14 +49,16 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         </choice>
 
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="Going to create Zendesk ticket : #[payload]" level="INFO" doc:name="Logger"/>
-        <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
-            <http:request-builder>
-                <http:header headerName="Content-Type" value="application/json"/>
-            </http:request-builder>
-        </http:request>
+        <logger message="ZENDESK TICKET : #[payload]" level="INFO" doc:name="zendesk ticket"/>
+        <until-successful maxRetries="5" doc:name="Until Successful" synchronous="true">
+            <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
+                <http:request-builder>
+                    <http:header headerName="Content-Type" value="application/json"/>
+                </http:request-builder>
+            </http:request>
+        </until-successful>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <set-variable variableName="ticket" value="#[payload]" doc:name="Variable - ticket"/>
+        <set-variable variableName="ticket" value="#[payload]" doc:name="ticket"/>
         <set-variable variableName="state" value="ZENDESK_TICKET_CREATED" doc:name="state"/>
         <flow-ref name="log_elastic_search" doc:name="eSearch"/>
     </sub-flow>
