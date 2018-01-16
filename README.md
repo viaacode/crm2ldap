@@ -1,2 +1,2 @@
-# ldap-crm
-Integration between LDAP and CRM
+# crm2ldap
+Integration between CRM and LDAP
