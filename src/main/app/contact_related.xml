@@ -8,6 +8,13 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <sub-flow name="contact_sync_crm_ldap">
+        <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
+        <flow-ref name="get_contacts_by_company" doc:name="get_contacts_by_company"/>
+        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="ldap_get_all_contacts_for_company"/>
+        <flow-ref name="contacts_match_crm_ldap" doc:name="contacts_match_crm_ldap"/>
+        <flow-ref name="ldap_contact" doc:name="ldap_contact"/>
+    </sub-flow>
     <sub-flow name="contacts_related_update">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
         <dw:transform-message doc:name="JSON to JAVA">
@@ -18,10 +25,10 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="get_company" doc:name="get_company"/>
-        <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
         <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Set or_number"/>
         <choice doc:name="Check if or_number">
             <when expression="#[flowVars.or_number == null]">
+                <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
                 <scripting:component doc:name="Set ldap contact actions to stop">
                     <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.object_id,"no_or_stop")
 
@@ -30,10 +37,7 @@ return payload]]></scripting:script>
                 <logger message="No OR number available" level="INFO" doc:name="No OR Number - Stop"/>
             </when>
             <otherwise>
-                <flow-ref name="get_contacts_by_company" doc:name="get_contacts_by_company"/>
-                <flow-ref name="ldap_get_all_contacts_for_company" doc:name="ldap_get_all_contacts_for_company"/>
-                <flow-ref name="contacts_match_crm_ldap" doc:name="contacts_match_crm_ldap"/>
-                <flow-ref name="ldap_contact" doc:name="ldap_contact"/>
+                <flow-ref name="contact_sync_crm_ldap" doc:name="Sync Contacts between CRM and LDAP"/>
             </otherwise>
         </choice>
 

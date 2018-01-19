@@ -306,7 +306,7 @@ return entryToAdd]]></scripting:script>
         </dw:transform-message>
         <set-variable variableName="uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid"/>
         <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
-        <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Dit is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
+        <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
                 <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld" doc:name="Variable - ticket_subject"/>

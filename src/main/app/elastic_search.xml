@@ -16,9 +16,9 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 --- 
-flowVars filter ($$ != "rootMessage" or $$ != "counter" or $$ != "jobData" or $$ != "jobConfig") mapObject {
-    '$$': $
-} ]]></dw:set-payload>
+flowVars - "rootMessage" - "jobConfig" - "jobData" mapObject {
+  '$$': $
+  }]]></dw:set-payload>
         </dw:transform-message>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="ESEARCH MESSAGE : #[payload]" level="INFO" doc:name="Debug message"/>

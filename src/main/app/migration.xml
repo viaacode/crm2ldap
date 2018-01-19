@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ldap http://www.mulesoft.org/schema/mule/ldap/current/mule-ldap.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <quartz:connector name="Quartz" validateConnections="true" doc:name="Quartz"/>
+    <flow name="migration_update_external_id" initialState="stopped">
+        <quartz:inbound-endpoint jobName="Test1" repeatInterval="0" repeatCount="0" startDelay="0" connector-ref="Quartz" responseTimeout="10000" doc:name="Quartz">
+            <quartz:event-generator-job/>
+        </quartz:inbound-endpoint>
+        <parse-template location="migration/${mule.env}_xref_contacts_uuid_externalid.csv" doc:name="Get File"/>
+        <dw:transform-message doc:name="LinkdeHashMap" metadata:id="7f393e7e-ab0b-4227-a0a0-b1e576a9fe50">
+            <dw:input-payload mimeType="application/csv" doc:sample="migration/staging_xref_contacts_uuid_externalid.csv">
+            </dw:input-payload>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <foreach doc:name="For Each">
+            <flow-ref name="migration_update_external_id_ldap" doc:name="Update LDAP"/>
+        </foreach>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <sub-flow name="migration_update_external_id_ldap">
+        <set-variable variableName="contact_uuid" value="#[payload.uuid]" doc:name="Set contact_uuid"/>
+        <set-variable variableName="contact_external_id" value="#[payload.external_id]" doc:name="Set contact_external_id"/>
+        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(entryUUID=#[flowVars.contact_uuid]))" scope="SUB_TREE" doc:name="Get By UUID">
+            <ldap:attributes>
+                <ldap:attribute>x-be-viaa-externalId</ldap:attribute>
+            </ldap:attributes>
+        </ldap:search>
+        <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
+        <set-variable variableName="ldap_external_id" value="#[payload[0].getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;)]" doc:name="Variable - ldap_external_id"/>
+        <choice doc:name="Check ldap_external_id ">
+            <when expression="#[flowVars.ldap_external_id == null]">
+                <logger level="INFO" doc:name="Logger"/>
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String externalId = flowVars.contact_external_id;
+
+LDAPEntry entryToModify = new LDAPEntry(dn);
+
+entryToModify.addAttribute("x-be-viaa-externalId", externalId);
+
+return entryToModify]]></scripting:script>
+                </scripting:component>
+                <ldap:modify config-ref="LDAP_Configuration"    doc:name="LDAP - Add Attribute"/>
+                <logger message="[MIGRATION] - Added Attribute -  #[flowVars.ldap_dn] - #[flowVars.contact_uuid]) - #[flowVars.contact_external_id]" level="INFO" doc:name="Logger"/>
+            </when>
+            <otherwise>
+                <logger level="INFO" doc:name="Logger"/>
+                <set-variable variableName="ldap_external_id" value="#[flowVars.ldap_external_id.getValue()]" doc:name="Variable - ldap_external_id get Value"/>
+                <ldap:modify-single-value-attribute config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" attributeName="x-be-viaa-externalId" attributeValue="#[flowVars.contact_external_id]" doc:name="LDAP - Modify Attribute"/>
+                <logger message="[MIGRATION] - Modify Attribute - #[flowVars.ldap_dn] - #[flowVars.contact_uuid]) - #[flowVars.contact_external_id]" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+</mule>

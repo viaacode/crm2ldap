@@ -97,9 +97,7 @@ payload splitBy ","]]></dw:set-payload>
 			</otherwise>
 		</choice>
 	</flow>
-	
-	
-    <sub-flow name="sector">
+	 <sub-flow name="sector">
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java

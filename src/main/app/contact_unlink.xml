@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <sub-flow name="contact_unlink_zendesk_ticket_body">
+        <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each">
+            <set-variable variableName="uuid" value="#[payload.getAttributes().getAttribute(&quot;entryUUID&quot;).getValue()]" doc:name="Variable - uuid"/>
+            <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
+            <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Dit is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
+        </foreach>
+    </sub-flow>
+    <sub-flow name="contact_unlink_blank_uuid">
+        <set-payload value="#['']" doc:name="Set Payload - Empty"/>
+        <set-attachment attachmentName="api_group" value="${teamleader_api.group}" contentType="text/plain" doc:name="Attachment - api_group"/>
+        <set-attachment attachmentName="api_secret" value="${teamleader_api.secret}" contentType="text/plain" doc:name="Attachment - api.secret"/>
+        <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
+        <set-attachment attachmentName="contact_id" value="#[flowVars.contact_id]" contentType="text/plain" doc:name="Attachment - contact_id"/>
+        <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.user_id}" value="#[&quot;&quot;]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID) to blank"/>
+        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+            <http:request-builder>
+                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+            </http:request-builder>
+        </http:request>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <logger message="CRM Contact '#[flowVars.contact_id]' UUID has been set to 'blank' (unlinked from ldap)" level="INFO" doc:name="CRM Contact has been unlinked from Company"/>
+    </sub-flow>
+    <sub-flow name="contact_unlink">
+        <logger message="If company #[company.id] has related contacts they will be unlinked in LDAP (clear o attribute) and CRM (clear uuid)" level="INFO" doc:name="If company has related contacts they will be unlinked in LDAP and CRM"/>
+        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get all contacts for company"/>
+        <choice doc:name="Check ldap_contacts">
+            <when expression="#[flowVars.ldap_contacts == null]">
+                <logger level="INFO" doc:name="Is null do nothing"/>
+            </when>
+            <otherwise>
+                <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each - Contact">
+                    <set-variable variableName="contact_id" value="#[payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;).getValue()]" doc:name="Set contact_id"/>
+                    <flow-ref name="contact_unlink_blank_uuid" doc:name="CRM Contact Blank UUID"/>
+                </foreach>
+                <flow-ref name="contact_unlink_zendesk_ldap_delete_mail" doc:name="Create Zendesk Mail For LDAP Delete"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+     <sub-flow name="contact_unlink_zendesk_ldap_delete_mail">
+        <flow-ref name="contact_unlink_zendesk_ticket_body" doc:name="contact_unlink_zendesk_ticket_body"/>
+        <choice doc:name="Choice - environment">
+            <when expression="#[flowVars.environment == 'production']">
+                <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld" doc:name="Variable - ticket_subject"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld (TEST)" doc:name="Variable - ticket_subject TEST"/>
+            </otherwise>
+        </choice>
+        <set-variable variableName="create_zendesk_ticket" value="true" doc:name="Variable - create_zendesk_ticket = true"/>
+    </sub-flow>
+</mule>
