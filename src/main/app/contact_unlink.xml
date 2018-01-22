@@ -36,15 +36,19 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
         <logger message="If company #[company.id] has related contacts they will be unlinked in LDAP (clear o attribute) and CRM (clear uuid)" level="INFO" doc:name="If company has related contacts they will be unlinked in LDAP and CRM"/>
         <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get all contacts for company"/>
         <choice doc:name="Check ldap_contacts">
-            <when expression="#[flowVars.ldap_contacts == null]">
+            <when expression="#[flowVars.ldap_contacts.size() == 0]">
                 <logger level="INFO" doc:name="Is null do nothing"/>
             </when>
             <otherwise>
+                <set-variable variableName="ticket_body" value="#[flowVars.ticket_body +  '\n* Wilt u de volgende contacten van dit bedrijf verwijderen uit LDAP?']" doc:name="Variable - ticket_body (extend)"/>
                 <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each - Contact">
                     <set-variable variableName="contact_id" value="#[payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;).getValue()]" doc:name="Set contact_id"/>
+                    <set-variable variableName="contact_uuid" value="#[payload.getAttributes().getAttribute('entryUUID').value]" doc:name="Variable - contact_uuid"/>
+                    <set-variable variableName="contact_name" value="#[payload.getAttributes().getAttribute('cn').value]" doc:name="Variable -  contact_name"/>
+                    <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.contact_uuid + ')']" doc:name="Variable - href_link"/>
+                    <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n  * ' + flowVars.contact_name + ' (' + flowVars.contact_id + ') : ' + flowVars.href_link]" doc:name="Variable - ticket_body (extend)"/>
                     <flow-ref name="contact_unlink_blank_uuid" doc:name="CRM Contact Blank UUID"/>
                 </foreach>
-                <flow-ref name="contact_unlink_zendesk_ldap_delete_mail" doc:name="Create Zendesk Mail For LDAP Delete"/>
             </otherwise>
         </choice>
     </sub-flow>
