@@ -37,8 +37,8 @@ payload]]></dw:set-payload>
         <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
     </sub-flow>
     <sub-flow name="company_delete_get">
-        <logger message="DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
          <set-variable variableName="object_id" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Set  object_id"/>
+        <logger message="Company Delete (Get) for #[flowVars.object_id]" level="INFO" doc:name="Company Delete"/>
         <flow-ref name="get_company" doc:name="get_company"/>
         <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
         <set-variable variableName="state" value="#['COMPANY_DELETE']" doc:name="Variable - state"/>
@@ -50,7 +50,11 @@ payload]]></dw:set-payload>
             <otherwise>
                 <flow-ref name="ldap_delete_organization" doc:name="ldap_delete_organization"/>
                 <set-payload value="#[&quot;Company has been deleted in LDAP&quot;]" mimeType="text/html" doc:name="Company has been deleted in LDAP"/>
+                <set-variable variableName="or_number" value="#['']" doc:name="Variable - or_number (clear)"/>
+                <set-variable variableName="update_or_number_in_teamleader" value="true" doc:name="Variable - update_or_number_in_teamleader"/>
+                <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number (clear OR Number)"/>
             </otherwise>
         </choice>
+        <set-variable variableName="result" value="Company Deleted in LDAP" doc:name="Variable - result"/>
     </sub-flow>
 </mule>

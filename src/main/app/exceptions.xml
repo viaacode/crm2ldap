@@ -17,17 +17,17 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <choice-exception-strategy name="globalChoice_Exception_Strategy">
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <set-variable variableName="error_message" value="Failed to process message" doc:name="Set error_message"/>
-                <set-variable variableName="error_cause" value="#[exception.toString() + &quot;\n\n&quot; + payload is org.mule.module.ldap.api.LDAPEntry ? payload.getDn() : message.payloadAs(java.lang.String)]" doc:name="Set error_cause"/>
+            <set-variable variableName="error_cause" value="#[exception.toString()]" doc:name="Variable - error_cause"/>
             <choice doc:name="Check if payload is LDAP Entry">
                 <when expression="#[payload is org.mule.module.ldap.api.LDAPEntry]">
                     <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + payload.getDn()]" doc:name="TRUE - Variable - error_cause (extend with dn)"/>
                 </when>
                 <otherwise>
-                    <set-variable variableName="error_cause" value="#[exception.toString() + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="FALSE - Variable - error_cause (extend with payload as string)"/>
+                    <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="FALSE - Variable - error_cause (extend with payload as string)"/>
                 </otherwise>
             </choice>
+            <logger message="ERROR MESSAGE : #[flowVars.error_message] - ERROR CAUSE : #[flowVars.error_cause]" level="INFO" doc:name="error_message and error_cause"/>
             <set-variable variableName="state" value="#['EXCEPTION']" doc:name="Variable - state"/>
-            <logger message="ERROR MESSAGE : #[flowVars.error_message] - ERROR CAUSE : #[flowVars.error_cause] " level="INFO" doc:name="error_message and error_cause"/>
             <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
             <set-variable variableName="kibana_link" value="http://${elastic.host}:${elastic.port.kibana}/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-2y,mode:quick,to:now))&amp;_a=(columns:!(state,event_id),index:crm2ldap,interval:auto,query:(query_string:(analyze_wildcard:!t,query:event_id%3D#[flowVars.event_id])),sort:!(timestamp,desc))" doc:name="Variable - kibana_link"/>
             <set-variable variableName="slack_message" value="#['*EXCEPTION :* ' + flowVars.error_message + &quot;\n\n&quot; + '*CAUSE :* ' + flowVars.error_cause + &quot;\n\n&quot; + '*DETAILS :* ' + flowVars.kibana_link]" doc:name="Variable - slack_message"/>
@@ -36,7 +36,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <slack:post-message config-ref="Slack__Token_Configuration" channelId="${slack.channel_id.exceptions}" username="CRM2LDAP - EXCEPTION" message="#[flowVars.slack_message]" doc:name="Slack Notification"/>
             </until-successful>
             <set-property propertyName="http.status" value="200" doc:name="Property - 200 - We give always back so that CRM does not retry"/>
-            <set-payload value="#[flowVars.error_message + &quot;\n&quot;+ flowVars.error_cause]" doc:name="Set Payload - error_message"/>
+            <set-payload value="#[flowVars.error_message + &quot;\n&quot; + flowVars.error_cause]" doc:name="Set Payload - error_message"/>
                  </catch-exception-strategy>
     </choice-exception-strategy>
 </mule>

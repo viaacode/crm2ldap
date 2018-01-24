@@ -173,7 +173,7 @@ return entryToAdd]]></scripting:script>
     </sub-flow>
     <sub-flow name="ldap_get_all_contacts_for_company">
         <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <ldap:search config-ref="LDAP_Configuration" baseDn="#[flowVars.ldap_dn]" filter="(objectClass=inetOrgPerson)" doc:name="get LDAP Contacts for Company" scope="SUB_TREE">
+        <ldap:search config-ref="LDAP_Configuration" baseDn="#[flowVars.ldap_dn]" filter="(&amp;(objectClass=inetOrgPerson)(!(employeeType=Technical User)))" doc:name="get LDAP Contacts for Company" scope="SUB_TREE">
             <ldap:attributes>
                 <ldap:attribute>mail</ldap:attribute>
                 <ldap:attribute>o</ldap:attribute>
@@ -333,7 +333,7 @@ return entryToAdd]]></scripting:script>
        )
 }]]></dw:set-payload>
         </dw:transform-message>
-        <set-variable variableName="crm_uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - crm_uuid"/>
+        <set-variable variableName="crm_uuid" value="#[payload[&quot;uuid&quot;] == null ? null : (payload[&quot;uuid&quot;])[0]]" doc:name="Variable - crm_uuid"/>
         <choice doc:name="compare crm and ldap uuid">
             <when expression="#[flowVars.crm_uuid != flowVars.contact_uuid]">
                 <set-variable variableName="result" value="#['UUIDs in LDAP and CRM are not the same no need to clear the CRM UUID']" doc:name="Variable - result"/>

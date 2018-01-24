@@ -9,6 +9,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
     <sub-flow name="contact_delete">
         <set-variable variableName="contact_uuid" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Variable - contact_uuid"/>
+        <logger message="Contact Delete (Get) for UUID #[flowVars.contact_uuid]" level="INFO" doc:name="Contact Delete (Get) for UUID"/>
         <flow-ref name="contact_get_by_uuid" doc:name="Get Contact by UUID"/>
         <set-variable variableName="state" value="CONTACT_DELETE_REQUEST" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="eSearch"/>

@@ -11,17 +11,19 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <flow name="contacts_related_receive">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/related_contacts/update" allowedMethods="POST" doc:name="HTTP - /ldap/related_contacts/update"/>
+        <set-variable variableName="scenario" value="CONTACTS_RELATED" doc:name="Variable - scenario"/>
         <flow-ref name="contacts_related_update" doc:name="contacts_related_update"/>
         <set-payload value="#['Related contacts for ' + flowVars.object_id + ' Processed'] " mimeType="text/plain" doc:name="Set Response"/>
     </flow>
     <flow name="contact_update_receive">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/update" allowedMethods="POST" doc:name="HTTP - /ldap/contact/update"/>
+        <set-variable variableName="scenario" value="CONTACT_UPDATE" doc:name="Variable - scenario"/>
         <flow-ref name="contact_update" doc:name="contact_update"/>
         <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
     </flow>
     <flow name="contact_receive_for_delete">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/delete" allowedMethods="GET" doc:name="HTTP - /ldap/contact/delete - GET"/>
-        <logger message="CONTACT DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="scenario" value="CONTACT_DELETE_GET" doc:name="Variable - scenario"/>
         <flow-ref name="contact_delete" doc:name="contact_delete"/>
         <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
     </flow>

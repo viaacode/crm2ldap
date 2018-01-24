@@ -22,7 +22,7 @@ flowVars - "rootMessage" - "jobConfig" - "jobData" mapObject {
         </dw:transform-message>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="ESEARCH MESSAGE : #[payload]" level="INFO" doc:name="Debug message"/>
-        <until-successful maxRetries="5" doc:name="Until Successful" synchronous="true">
+        <until-successful maxRetries="3" doc:name="Until Successful" synchronous="true" millisBetweenRetries="10000">
             <http:request config-ref="elastic_search" path="crm2ldap/events" method="POST" doc:name="POST event to ES"/>
         </until-successful>
     </sub-flow>
