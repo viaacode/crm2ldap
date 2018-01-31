@@ -41,7 +41,7 @@ return crm_contacts]]></scripting:script>
     </sub-flow>
     <sub-flow name="contact_get_or_number_from_company">
         <set-variable variableName="object_id_org" value="#[flowVars.object_id]" doc:name="Variable - object_id_org"/>
-        <set-variable variableName="object_id" value="#[flowVars.contact.linked_company_ids]" doc:name="Variable - object_id (company_id)"/>
+        <set-variable variableName="object_id" value="#[flowVars.contact.linked_company_ids]" doc:name="Variable - object_id (company_id) "/>
         <choice doc:name="Check If linked company">
             <when expression="#[flowVars.object_id == null || flowVars.object_id == '']">
                 <logger message="Contact has no linked companies. " level="INFO" doc:name="False - Do Nothing"/>

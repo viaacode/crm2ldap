@@ -261,6 +261,8 @@ return entryToAdd]]></scripting:script>
                             </scripting:component>
                         </otherwise>
                     </choice>
+                    <set-variable variableName="state" value="LDAP_ACTION" doc:name="Variable - state"/>
+                    <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
                 </foreach>
             </otherwise>
         </choice>
@@ -372,6 +374,8 @@ entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
         </scripting:component>
+        <set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]" doc:name="Set ldap_entry_as_string"/>
+        <logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]" level="INFO" doc:name="Logger - ldap_entry_as_string"/>
     </sub-flow>
     <sub-flow name="ldap_contact_check_mail">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(mail=#[flowVars.contact.email]))" doc:name="LDAP - Search for contacts with email" scope="SUB_TREE"/>

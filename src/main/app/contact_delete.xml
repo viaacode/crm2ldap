@@ -8,6 +8,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
     <sub-flow name="contact_delete">
+        <set-variable variableName="event_id" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Variable - event_id"/>
         <set-variable variableName="contact_uuid" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Variable - contact_uuid"/>
         <logger message="Contact Delete (Get) for UUID #[flowVars.contact_uuid]" level="INFO" doc:name="Contact Delete (Get) for UUID"/>
         <flow-ref name="contact_get_by_uuid" doc:name="Get Contact by UUID"/>
