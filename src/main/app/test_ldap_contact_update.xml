@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ldap http://www.mulesoft.org/schema/mule/ldap/current/mule-ldap.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <flow name="test_ldap_contact_updateFlow" initialState="stopped">
+        <quartz:inbound-endpoint jobName="Teststststst" repeatInterval="0" repeatCount="0" startDelay="0" connector-ref="Quartz" responseTimeout="10000" doc:name="Quartz">
+            <quartz:event-generator-job/>
+        </quartz:inbound-endpoint>
+        <scripting:component doc:name="LDAP Entry - Hardcoded">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = "mail=test12@tester.be,o=OR-bg2h89t,ou=apps,ou=users,dc=qas,dc=viaa,dc=be";
+String cn = "Test 12 Testerr";
+String givenName = "Test 12";
+String sn = "Tester";
+String externalId = "20339250";
+String o = "OR-bg2h89t";
+
+LDAPEntry entryToAdd = new LDAPEntry(dn);
+
+entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
+entryToAdd.addAttribute("cn", cn);
+entryToAdd.addAttribute("givenName", givenName);
+entryToAdd.addAttribute("sn", sn);
+entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
+entryToAdd.addAttribute("o", o);
+
+return entryToAdd]]></scripting:script>
+        </scripting:component>
+        <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Add Entry"/>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
