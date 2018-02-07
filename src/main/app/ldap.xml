@@ -30,6 +30,37 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
    	</ldap:config>
     <context:property-placeholder location="${mule.env}.properties"/>
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <sub-flow name="ldap_contact_entry_to_update">
+        <flow-ref name="ldap_contact_get_object_classes" doc:name="ldap_contact_get_object_classes"/><scripting:component doc:name="LDAP Entry">
+            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+
+String dn = flowVars.ldap_dn;
+String cn;
+String givenName = flowVars.contact.forename;
+String sn = flowVars.contact.surname;
+String externalId = flowVars.contact_id;
+String o = flowVars.or_number;
+objectClass = flowVars.object_class;
+
+if (flowVars.contact.forename != null && flowVars.contact.forename != "") {
+    cn = flowVars.contact.forename + " " + flowVars.contact.surname
+} else {
+    cn = flowVars.contact.surname
+};
+
+LDAPEntry entryToUpdate = new LDAPEntry(dn);
+
+entryToUpdate.addAttribute("objectClass", objectClass);
+//entryToUpdate.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person","posixAccount","hostObject"]);
+entryToUpdate.addAttribute("cn", cn);
+if (givenName != null && givenName != "") {entryToUpdate.addAttribute("givenName", givenName)};
+entryToUpdate.addAttribute("sn", sn);
+entryToUpdate.addAttribute("x-be-viaa-externalId", externalId);
+entryToUpdate.addAttribute("o", o);
+
+return entryToUpdate]]></scripting:script>
+        </scripting:component>
+    </sub-flow>
     <sub-flow name="ldap_add_organization">
         <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
         <scripting:component doc:name="Create LDAP Entry">
@@ -288,8 +319,17 @@ return entryToAdd]]></scripting:script>
 
     </sub-flow>
     <sub-flow name="ldap_contact_update">
-        <flow-ref name="ldap_contact_action_prepare" doc:name="ldap_contact_action_prepare"/>
+        <flow-ref name="ldap_contact_action_prepare_update" doc:name="ldap_contact_action_prepare_update"/>
         <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify Entry"/>
+        <choice doc:name="If CRM contact forname is empty and ldap givenName exists">
+            <when expression="#[(flowVars.contact.forename == null || flowVars.contact.forename == &quot;&quot;) &amp;&amp; flowVars.ldap_given_name != null]">
+                <logger message="Going to delete attribute givenName #[flowVars.ldap_given_name] from  #[flowVars.ldap_dn]" level="INFO" doc:name="Logger"/>
+                <ldap:delete-single-value-attribute config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" attributeName="givenName" attributeValue="#[flowVars.ldap_given_name]" doc:name="TRUE - LDAP Delete Attribute givenName"/>
+            </when>
+            <otherwise>
+                <logger message="Dummy - Do Nothing" level="INFO" doc:name="Do Nothing"/>
+            </otherwise>
+        </choice>
         <flow-ref name="ldap_contact_check_mail" doc:name="ldap_contact_check_mail"/>
 
     </sub-flow>
@@ -353,27 +393,40 @@ return entryToAdd]]></scripting:script>
         <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
         <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
 
-        <scripting:component doc:name="LDAP Entry">
+        <scripting:component doc:name="LDAP Entry to Add">
             <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
-String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
+String cn;
 String givenName = flowVars.contact.forename;
 String sn = flowVars.contact.surname;
 String externalId = flowVars.contact_id;
 String o = flowVars.or_number;
 
+if (flowVars.contact.forename != null && flowVars.contact.forename != "") {
+    cn = flowVars.contact.forename + " " + flowVars.contact.surname
+} else {
+    cn = flowVars.contact.surname
+};
+
 LDAPEntry entryToAdd = new LDAPEntry(dn);
 
 entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
 entryToAdd.addAttribute("cn", cn);
-entryToAdd.addAttribute("givenName", givenName);
+if (givenName != null && givenName != "") {entryToAdd.addAttribute("givenName", givenName)};
 entryToAdd.addAttribute("sn", sn);
 entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
 entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
         </scripting:component>
+        <set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]" doc:name="Set ldap_entry_as_string"/>
+        <logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]" level="INFO" doc:name="Logger - ldap_entry_as_string"/>
+    </sub-flow>
+     <sub-flow name="ldap_contact_action_prepare_update">
+        <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
+        <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+        <flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update"/>
         <set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]" doc:name="Set ldap_entry_as_string"/>
         <logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]" level="INFO" doc:name="Logger - ldap_entry_as_string"/>
     </sub-flow>
@@ -400,5 +453,25 @@ return entryToAdd]]></scripting:script>
             </otherwise>
         </choice>
     </sub-flow>
-
+  <sub-flow name="ldap_contact_get_object_classes" >
+        <ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Lookup Entry - objectClasses">
+            <ldap:attributes>
+                <ldap:attribute>objectClass</ldap:attribute>
+            </ldap:attributes>
+        </ldap:lookup>
+        <set-variable variableName="object_class" value="#[message.payload.getAttributes().attributes().next().getValues()]" doc:name="Variable - object_class"/>
+        <ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Lookup givenName">
+            <ldap:attributes>
+                <ldap:attribute>givenName</ldap:attribute>
+            </ldap:attributes>
+        </ldap:lookup>
+    <choice doc:name="Check if LDAP Attrribute givenName excists">
+            <when expression="#[payload.getAttributes().getAttribute(&quot;givenName&quot;) != null]">
+                <set-variable variableName="ldap_given_name" value="#[payload.getAttributes().getAttribute(&quot;givenName&quot;).getValue()]" doc:name="TRUE - Set ldap_given_name"/>
+            </when>
+            <otherwise>
+                <remove-variable variableName="ldap_given_name" doc:name="Delete flowVars.ldap_given_name"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
 </mule>

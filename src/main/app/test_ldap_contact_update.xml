@@ -17,7 +17,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = "mail=test12@tester.be,o=OR-bg2h89t,ou=apps,ou=users,dc=qas,dc=viaa,dc=be";
-String cn = "Test 12 Testerr";
+String cn = "Test 12 Testerrrrrrr";
 String givenName = "Test 12";
 String sn = "Tester";
 String externalId = "20339250";
@@ -25,7 +25,7 @@ String o = "OR-bg2h89t";
 
 LDAPEntry entryToAdd = new LDAPEntry(dn);
 
-entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
+entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person","posixAccount","hostObject"]);
 entryToAdd.addAttribute("cn", cn);
 entryToAdd.addAttribute("givenName", givenName);
 entryToAdd.addAttribute("sn", sn);
@@ -34,7 +34,26 @@ entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
         </scripting:component>
-        <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Add Entry"/>
+        <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify Entry"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <ldap:lookup config-ref="LDAP_Configuration" dn="mail=test12@tester.be,o=OR-bg2h89t,ou=apps,ou=users,dc=qas,dc=viaa,dc=be" doc:name="LDAP Lookup Entry">
+            <ldap:attributes>
+                <ldap:attribute>objectClass</ldap:attribute>
+            </ldap:attributes>
+        </ldap:lookup>
+        <set-variable variableName="object_class" value="#[message.payload.getAttributes().attributes().next().getValues()]" doc:name="Variable - object_class"/>
+        <foreach collection="#[flowVars.object_class]" doc:name="For Each">
+            <choice doc:name="Choice - counter">
+                <when expression="#[flowVars.counter == 1]">
+                    <set-variable variableName="object_class_string" value="&quot;#[message.payload]&quot;" doc:name="Variable"/>
+                    <logger level="INFO" doc:name="Logger"/>
+                </when>
+                <otherwise>
+                    <set-variable variableName="object_class_string" value="#[flowVars.object_class_string],&quot;#[message.payload]&quot;" doc:name="Variable"/>
+                    <logger level="INFO" doc:name="Logger"/>
+                </otherwise>
+            </choice>
+        </foreach>
         <logger level="INFO" doc:name="Logger"/>
     </flow>
 </mule>

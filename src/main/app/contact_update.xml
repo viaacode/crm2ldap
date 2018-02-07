@@ -32,33 +32,19 @@ payload]]></dw:set-payload>
                 <flow-ref name="contact_get_or_number_from_company" doc:name="contact_get_or_number_from_company"/>
                 <set-variable variableName="state" value="LDAP_BEFORE_UPDATE" doc:name="Variable - state"/>
                 <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-                <foreach doc:name="For Each - ldap_contact" collection="#[flowVars.ldap_contacts]">
+                <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each - ldap_contact">
                     <set-variable variableName="ldap_dn" value="#[payload.getDn()]" doc:name="Variable - ldap_dn"/>
                     <set-variable variableName="ldap_mail" value="#[(payload.getAttributes()).getAttribute(&quot;mail&quot;).value]" doc:name="Variable - ldap_mail"/>
-                    <scripting:component doc:name="LDAP Entry">
-                        <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
-
-String dn = flowVars.ldap_dn;
-String cn = flowVars.contact.forename + " " + flowVars.contact.surname;
-String givenName = flowVars.contact.forename;
-String sn = flowVars.contact.surname;
-//String mail = flowVars.contact.email;
-String externalId = flowVars.contact_id;
-String o = flowVars.or_number;
-
-LDAPEntry entryToAdd = new LDAPEntry(dn);
-
-entryToAdd.addAttribute("objectClass", ["inetOrgPerson","pwmUser","top","x-be-viaa-person"]);
-entryToAdd.addAttribute("cn", cn);
-entryToAdd.addAttribute("givenName", givenName);
-entryToAdd.addAttribute("sn", sn);
-//entryToAdd.addAttribute("mail", mail);
-entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
-entryToAdd.addAttribute("o", o);
-
-return entryToAdd]]></scripting:script>
-                    </scripting:component>
-                    <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP - Modify"/>
+                    <choice doc:name="Check if ldap givenName exists and crm forename is empty">
+                        <when expression="#[payload.getAttributes().getAttribute(&quot;givenName&quot;) != null &amp;&amp; (contact.forename == null || contact.forename == &quot;&quot;)]">
+                            <ldap:delete-single-value-attribute config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" attributeName="givenName" attributeValue="#[payload.getAttributes().getAttribute(&quot;givenName&quot;).getValue()]" doc:name="YES - Delete LDAP Attribute givenName"/>
+                        </when>
+                        <otherwise>
+                            <logger message="Default Do Nothing" level="INFO" doc:name="No - Do nothing"/>
+                        </otherwise>
+                    </choice>
+                    <flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update"/>
+                    <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify"/>
                     <choice doc:name="Check if email has been changed">
                         <when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
                             <logger message="Email '#[flowVars.contact.email]' did not change" level="INFO" doc:name="Email did not change - Do Nothing"/>
