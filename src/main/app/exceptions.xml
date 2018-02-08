@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <set-variable variableName="error_cause" value="#[exception.toString()]" doc:name="Variable - error_cause"/>
             <choice doc:name="Check if payload is LDAP Entry">
                 <when expression="#[payload is org.mule.module.ldap.api.LDAPEntry]">
-                    <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + payload.getDn()]" doc:name="TRUE - Variable - error_cause (extend with dn)"/>
+                    <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + payload.getDn()   + &quot;\n\n&quot; + exception.getCause().toString()]" doc:name="TRUE - Variable - error_cause (extend with dn)"/>
                 </when>
                 <otherwise>
                     <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="FALSE - Variable - error_cause (extend with payload as string)"/>
