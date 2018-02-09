@@ -20,10 +20,10 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
     <choice-exception-strategy name="globalChoice_Exception_Strategy">
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <set-variable variableName="error_message" value="Failed to process message" doc:name="Set error_message"/>
-            <set-variable variableName="error_cause" value="#[exception.toString()]" doc:name="Variable - error_cause"/>
+            <set-variable variableName="error_cause" value="#[exception.toString() + &quot;\n\n&quot; + exception.getCause().toString()]" doc:name="Variable - error_cause"/>
             <choice doc:name="Check if payload is LDAP Entry">
                 <when expression="#[payload is org.mule.module.ldap.api.LDAPEntry]">
-                    <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + payload.getDn()   + &quot;\n\n&quot; + exception.getCause().toString()]" doc:name="TRUE - Variable - error_cause (extend with dn)"/>
+                    <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + payload.getDn()]" doc:name="TRUE - Variable - error_cause (extend with dn)"/>
                 </when>
                 <otherwise>
                     <set-variable variableName="error_cause" value="#[flowVars.error_cause + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="FALSE - Variable - error_cause (extend with payload as string)"/>
