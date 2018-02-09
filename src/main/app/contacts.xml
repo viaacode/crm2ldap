@@ -85,6 +85,19 @@ payload]]></dw:set-payload>
                 <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
             </http:request-builder>
         </http:request>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+    </sub-flow>
+       <sub-flow name="contact_clear_roles">
+        <set-payload value="#['']" doc:name="Set Payload - Empty"/>
+        <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
+        <set-attachment attachmentName="contact_id" value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - contact_id"/>
+        <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.roles}" value="#[&quot;&quot;]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID)"/>
+        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+            <http:request-builder>
+                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+            </http:request-builder>
+        </http:request>
 
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
 

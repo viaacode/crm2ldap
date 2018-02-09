@@ -384,7 +384,8 @@ return entryToAdd]]></scripting:script>
             <otherwise>
                 <set-variable variableName="ldap_entry_uuid" value="#['']" doc:name="Variable - ldap_entry_uuid to blank"/>
                 <flow-ref name="contact_set_uuid" doc:name="Blank uuid in crm"/>
-                <set-variable variableName="result" value="#['UUID is cleared in CRM']" doc:name="Variable - result"/>
+                <flow-ref name="contact_clear_roles" doc:name="contact_clear_roles"/>
+                <set-variable variableName="result" value="#['UUID and Rokes are cleared in CRM']" doc:name="Variable - result"/>
             </otherwise>
         </choice>
 
