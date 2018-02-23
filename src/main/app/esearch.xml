@@ -33,6 +33,7 @@ flowVars - "rootMessage" - "jobData" - "jobConfig" - "amqp.channel" mapObject {
         </dw:transform-message>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="Sending Log Message to Queue #[payload]" level="INFO" doc:name="Sending Log message to Queue"/>
-        <amqp:outbound-endpoint queueName="${rabbit.queue.esearch_log}" queueDurable="true" responseTimeout="10000" connector-ref="OutboundAMQPConnector" doc:name="AMQP - Publish Log Entry"/>
+        <amqp:outbound-endpoint queueName="${rabbit.queue.esearch_log}" queueDurable="true" responseTimeout="10000" connector-ref="OutboundAMQPConnector" doc:name="AMQP - Publish Log Entry">
+        </amqp:outbound-endpoint>
     </sub-flow>
 </mule>

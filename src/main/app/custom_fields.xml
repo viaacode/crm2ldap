@@ -6,14 +6,15 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<sub-flow name="get_custom_fields">
-
-		<http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
-            <http:request-builder>
-                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                <http:query-param paramName="for" value="#[flowVars.object_type]"/>
-            </http:request-builder>
-        </http:request>
+        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
+                <http:request-builder>
+                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                    <http:query-param paramName="for" value="#[flowVars.object_type]"/>
+                </http:request-builder>
+            </http:request>
+        </until-successful>
         <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
         <dw:transform-message doc:name="LinkedHashMap">
             <dw:set-payload><![CDATA[%dw 1.0

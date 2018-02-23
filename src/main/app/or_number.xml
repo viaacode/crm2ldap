@@ -17,7 +17,9 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
                 <logger message="OR number '#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]' is available for '#[flowVars.object_id]'" level="INFO" doc:name="Log - OR is available or when company added always generate new or number"/>
             </when>
             <otherwise>
-                <http:request config-ref="HTTP_Request_Configuration_OR" path="/noidu_kt5?mint+1" method="GET" doc:name="HTTP - Get Random Number"/>
+                <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+                    <http:request config-ref="HTTP_Request_Configuration_OR" path="/noidu_kt5?mint+1" method="GET" doc:name="HTTP - Get Random Number"/>
+                </until-successful>
                 <byte-array-to-string-transformer doc:name="Byte Array to String"/>
                 <set-variable variableName="or_number" value="#[payload.replace('id: ', 'OR-').replaceAll(&quot;\n&quot;, &quot;&quot;)]" doc:name="Variable - or_number"/>
                 <set-variable variableName="update_or_number_in_teamleader" value="true" doc:name="Variable - update_or_number_in_teamleader"/>

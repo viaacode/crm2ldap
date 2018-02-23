@@ -21,14 +21,13 @@ payload]]></dw:set-payload>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="get_company" doc:name="get_company"/>
         <set-variable variableName="href_link" value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + ')']" doc:name="Variable - href_link"/>
+        <set-variable variableName="ticket_body" value="#[flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP.' + &quot;\n\n&quot; +' Moet dit bedrijf ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
-                <set-variable variableName="ticket_body" value="#['- ' + flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP. Moet dit bedrijf ook in LDAP verwijderd worden?' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="ticket_body for Production"/>
                 <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd']" doc:name="Set ticket_subject for Production"/>
             </when>
             <otherwise>
-                <set-variable variableName="ticket_body" value="#['- ' + flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP. Moet dit bedrijf ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- DIt is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Set ticket_body"/>
-                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd (TEST)']" doc:name="Set ticket_subject"/>
+                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd (TEST)']" doc:name="Set ticket_subject for Test"/>
             </otherwise>
         </choice>
         <logger message="Going to create a Zendesk ticket to delete company : #[flowVars.company.name]" level="INFO" doc:name="Logger"/>

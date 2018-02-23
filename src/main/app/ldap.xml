@@ -348,7 +348,7 @@ return entryToAdd]]></scripting:script>
         </dw:transform-message>
         <set-variable variableName="uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid"/>
         <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
-        <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
+        <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP.' + &quot;\n\n&quot; + 'Moet dit contact ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
                 <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld" doc:name="Variable - ticket_subject"/>
@@ -436,14 +436,13 @@ return entryToAdd]]></scripting:script>
         <choice doc:name="Email occurs multiple times in LDAP?">
             <when expression="#[payload.size() &gt; 1]">
                 <logger message="MULTIPLE EMAIL CHECK : email #[flowVars.contact.email] occurs #[payload.size()] times in LDAP. Make Zendesk Ticket." level="INFO" doc:name="True - Make Zendesk Ticket."/>
+                <set-variable variableName="ticket_body" value="#['- E-mailadres ' + flowVars.contact.email + ' komt ' + payload.size() + ' keer voor in LDAP. Een e-mailadres mag maar &#233;&#233;n keer gebruikt worden in LDAP. Gelieve na te kijken en de e-mailadressen te wijzigen.']" doc:name="ticket_body"/>
                       <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
-                <set-variable variableName="ticket_body" value="#['- Email ' + flowVars.contact.email + ' komt ' + payload.size() + ' keer voor in LDAP. Graag controleren of dit juist is.' + &quot;\n\n&quot; + '- Ticket toewijzen aan Tine Philips']" doc:name="ticket_body for Production"/>
-                <set-variable variableName="ticket_subject" value="#['Teamleader: Email komt meerdere keren voor in LDAP']" doc:name="Set ticket_subject for Production"/>
+                <set-variable variableName="ticket_subject" value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP']" doc:name="Set ticket_subject for Production"/>
             </when>
             <otherwise>
-                <set-variable variableName="ticket_body" value="#['- Email ' + flowVars.contact.email + ' komt ' + payload.size() + ' keer voor in LDAP. Graag controleren of dit juist is.' + &quot;\n\n&quot; + '- DIt is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.']" doc:name="Set ticket_body"/>
-                <set-variable variableName="ticket_subject" value="#['Teamleader: Email komt meerdere keren voor in LDAP (TEST)']" doc:name="Set ticket_subject"/>
+                <set-variable variableName="ticket_subject" value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP (TEST)']" doc:name="Set ticket_subject Test"/>
             </otherwise>
         </choice>
         <logger message="Going to create a Zendesk ticket to inform about multiple email adresses in ldap for : #[flowVars.contact.email]" level="INFO" doc:name="Logger"/>

@@ -37,6 +37,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             <set-variable variableName="kibana_link" value="http://${elastic.host}:${elastic.port.kibana}/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-20h,mode:quick,to:now))&amp;_a=(columns:!(state,event_id),index:#[flowVars.index],interval:auto,query:(query_string:(analyze_wildcard:!t,query:event_id%3D#[flowVars.event_id])),sort:!(timestamp,desc))" doc:name="Variable - kibana_link"/>
             <set-variable variableName="slack_message" value="#['*EXCEPTION :* ' + flowVars.error_message + &quot;\n\n&quot; + '*CAUSE :* ' + flowVars.error_cause + &quot;\n\n&quot; + '*DETAILS :* ' + flowVars.kibana_link]" doc:name="Variable - slack_message"/>
             <logger message="SLACK MESSAGE : #[flowVars.slack_message]" level="INFO" doc:name="slack_message"/>
+            <set-payload value="#['']" doc:name="Set Payload - make empty"/>
             <dw:transform-message doc:name="Transform Message">
                 <dw:set-payload><![CDATA[%dw 1.0
 %output application/json

@@ -22,7 +22,7 @@ payload]]></dw:set-payload>
         <flow-ref name="ldap_check_if_contact_excists" doc:name="ldap_check_if_contact_excists"/>
         <choice doc:name="Excists?">
             <when expression="#[flowVars.ldap_contact_excists == false]">
-                <logger level="INFO" doc:name="FALSE- Stop"/>
+                <logger level="INFO" doc:name="FALSE- Stop" message="Contact does not excists in LDAP"/>
                 <set-variable variableName="result" value="Contact does not excists in LDAP" doc:name="Variable - result"/>
             </when>
             <otherwise>

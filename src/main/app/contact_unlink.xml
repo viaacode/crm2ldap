@@ -23,12 +23,14 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
         <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
         <set-attachment attachmentName="contact_id" value="#[flowVars.contact_id]" contentType="text/plain" doc:name="Attachment - contact_id"/>
         <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.user_id}" value="#[&quot;&quot;]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID) to blank"/>
-        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
-            <http:request-builder>
-                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-            </http:request-builder>
-        </http:request>
+        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+                <http:request-builder>
+                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                </http:request-builder>
+            </http:request>
+        </until-successful>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="CRM Contact '#[flowVars.contact_id]' UUID has been set to 'blank' (unlinked from ldap)" level="INFO" doc:name="CRM Contact has been unlinked from Company"/>
     </sub-flow>
@@ -37,16 +39,16 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
         <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get all contacts for company"/>
         <choice doc:name="Check ldap_contacts">
             <when expression="#[flowVars.ldap_contacts.size() == 0]">
-                <logger level="INFO" doc:name="Is null do nothing"/>
+                <logger level="INFO" doc:name="Is null do nothing" message="Do Nothing"/>
             </when>
             <otherwise>
-                <set-variable variableName="ticket_body" value="#[flowVars.ticket_body +  '\n* Wilt u de volgende contacten van dit bedrijf verwijderen uit LDAP?']" doc:name="Variable - ticket_body (extend)"/>
+                <set-variable variableName="ticket_body" value="#[flowVars.ticket_body +  '\n\n' + '* Wilt u de volgende contacten van dit bedrijf verwijderen uit LDAP? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.']" doc:name="Variable - ticket_body (extend)"/>
                 <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each - Contact">
                     <set-variable variableName="contact_id" value="#[payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;).getValue()]" doc:name="Set contact_id"/>
                     <set-variable variableName="contact_uuid" value="#[payload.getAttributes().getAttribute('entryUUID').value]" doc:name="Variable - contact_uuid"/>
                     <set-variable variableName="contact_name" value="#[payload.getAttributes().getAttribute('cn').value]" doc:name="Variable -  contact_name"/>
                     <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.contact_uuid + ')']" doc:name="Variable - href_link"/>
-                    <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n  * ' + flowVars.contact_name + ' (' + flowVars.contact_id + ') : ' + flowVars.href_link]" doc:name="Variable - ticket_body (extend)"/>
+                    <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n\n' + '  * ' + flowVars.contact_name + ' (' + flowVars.contact_id + ') : ' + flowVars.href_link]" doc:name="Variable - ticket_body (extend)"/>
                 </foreach>
             </otherwise>
         </choice>

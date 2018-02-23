@@ -24,7 +24,9 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
                 <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
                 <set-attachment attachmentName="company_id" value="#[(flowVars.object_id).toString()]" contentType="text/plain" doc:name="Attachment - company_id"/>
                 <set-attachment attachmentName="custom_field_${teamleader.custom_field.or_number}" value="#[flowVars.or_number]" contentType="text/plain" doc:name="Attachment - custom_field_ID - OR Number"/>
-                <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateCompany.php" method="POST" doc:name="HTTP - UpdateCompany"/>
+                <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+                    <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateCompany.php" method="POST" doc:name="HTTP - UpdateCompany"/>
+                </until-successful>
                 <byte-array-to-string-transformer doc:name="Byte Array to String"/>
                 <logger message="OR Number '#[flowVars.or_number]' updated in Company '#[flowVars.object_id]' - #[payload]" level="INFO" doc:name="Logger OR Number Updated in Company"/>
                 <set-variable variableName="state" value="#['UPDATE_OR_NUMBER']" doc:name="Variable"/>
@@ -36,13 +38,15 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
         </choice>
     </sub-flow>
     <sub-flow name="get_company">
-        <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCompany.php" method="GET" doc:name="HTTP - GetComany Details">
-            <http:request-builder>
-                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
-            </http:request-builder>
-        </http:request>
+        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCompany.php" method="GET" doc:name="HTTP - GetComany Details">
+                <http:request-builder>
+                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                    <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
+                </http:request-builder>
+            </http:request>
+        </until-successful>
         <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
         <dw:transform-message doc:name="LinkedHashMap">
             <dw:set-payload><![CDATA[%dw 1.0
