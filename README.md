@@ -12,11 +12,11 @@ Method	POST 		http://localhost:10002/ldap/company/create
 Header	Content-Type	application/json
 Body
 
-{  
-   "event_type":"company_added",
-   "object_type":"company",
-   "object_id":"15669750"
-}
+    {  
+       "event_type":"company_added",
+       "object_type":"company",
+       "object_id":"15669750"
+    }
 
 ### Update
 
