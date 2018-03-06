@@ -24,11 +24,11 @@ Method	POST 		http://localhost:10002/ldap/company/create
 Header	Content-Type	application/json
 Body
 
-{  
-   "event_type":"company_added",
-   "object_type":"company",
-   "object_id":"15669750"
-}
+    {  
+       "event_type":"company_added",
+       "object_type":"company",
+       "object_id":"15669750"
+    }
 
 ### Delete
 
@@ -36,11 +36,11 @@ Method	POST 		http://localhost:10002/ldap/company/delete
 Header	Content-Type	application/json
 Body
 
-{  
-   "event_type":"company_deleted",
-   "object_type":"company",
-   "object_id":"15669750"
-}
+    {  
+       "event_type":"company_deleted",
+       "object_type":"company",
+       "object_id":"15669750"
+    }
 
 Method	GET	http://localhost:10002/ldap/company/delete?id=15612031
 
@@ -50,27 +50,27 @@ Id is teamleader id of the company
 
 ### Related Update
 
-Method	POST 		http://localhost:10002/ldap/related_contacts/update
+Method	POST 		    http://localhost:10002/ldap/related_contacts/update
 Header	Content-Type	application/json
 Body
 
-{
-    "event_type": "related_contacts_updated",
-    "object_type": "company",
-    "object_id": "17521500"
-}
+    {
+        "event_type": "related_contacts_updated",
+        "object_type": "company",
+        "object_id": "17521500"
+    }
 
 ### Update
 
-Method	POST 		http://localhost:10002/ldap/contact/update
+Method	POST 		    http://localhost:10002/ldap/contact/update
 Header	Content-Type	application/json
 Body
 
-{
-    "event_type": "contact_edited",
-    "object_type": "contact",
-    "object_id": "17963208"
-}
+    {
+        "event_type": "contact_edited",
+        "object_type": "contact",
+        "object_id": "17963208"
+    }
 
 ### Delete
 
