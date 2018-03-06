@@ -9,7 +9,9 @@ Integration between LDAP and CRM
 ### Create
 
 Method	POST 		http://localhost:10002/ldap/company/create
+
 Header	Content-Type	application/json
+
 Body
 
     {  
@@ -21,7 +23,9 @@ Body
 ### Update
 
 Method	POST 		http://localhost:10002/ldap/company/create
+
 Header	Content-Type	application/json
+
 Body
 
     {  
@@ -33,7 +37,9 @@ Body
 ### Delete
 
 Method	POST 		http://localhost:10002/ldap/company/delete
+
 Header	Content-Type	application/json
+
 Body
 
     {  
@@ -51,7 +57,9 @@ Id is teamleader id of the company
 ### Related Update
 
 Method	POST 		    http://localhost:10002/ldap/related_contacts/update
+
 Header	Content-Type	application/json
+
 Body
 
     {
@@ -63,7 +71,9 @@ Body
 ### Update
 
 Method	POST 		    http://localhost:10002/ldap/contact/update
+
 Header	Content-Type	application/json
+
 Body
 
     {
