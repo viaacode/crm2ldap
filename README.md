@@ -1,8 +1,14 @@
-# ldap-crm
+# crm2ldap
+
 Integration between LDAP and CRM
 
-# ldap-crm
-Integration between LDAP and CRM
+## Introduction
+
+TODO: introduction
+
+## Overview
+
+TODO: high-level overview (flow-diagram)
 
 ## Company
 
@@ -14,11 +20,13 @@ Header	Content-Type	application/json
 
 Body
 
-    {  
-       "event_type":"company_added",
-       "object_type":"company",
-       "object_id":"15669750"
-    }
+```json
+{  
+	"event_type"	: "company_added",
+	"object_type"	: "company",
+	"object_id"		: "15669750"
+}
+```
 
 ### Update
 
@@ -28,11 +36,13 @@ Header	Content-Type	application/json
 
 Body
 
-    {  
-       "event_type":"company_added",
-       "object_type":"company",
-       "object_id":"15669750"
-    }
+```json
+{
+	"event_type"	: "company_added",
+	"object_type"	: "company",
+	"object_id"		: "15669750"
+}
+```
 
 ### Delete
 
@@ -42,11 +52,13 @@ Header	Content-Type	application/json
 
 Body
 
-    {  
-       "event_type":"company_deleted",
-       "object_type":"company",
-       "object_id":"15669750"
-    }
+```json
+{
+	"event_type"	: "company_deleted",
+	"object_type"	: "company",
+	"object_id"		: "15669750"
+}
+```
 
 Method	GET	http://localhost:10002/ldap/company/delete?id=15612031
 
@@ -62,25 +74,29 @@ Header	Content-Type	application/json
 
 Body
 
-    {
-        "event_type": "related_contacts_updated",
-        "object_type": "company",
-        "object_id": "17521500"
-    }
+```json
+{
+	"event_type"	: "related_contacts_updated",
+	"object_type"	: "company",
+	"object_id"		: "17521500"
+}
+```
 
 ### Update
 
-Method	POST 		    http://localhost:10002/ldap/contact/update
+Method	POST 			http://localhost:10002/ldap/contact/update
 
 Header	Content-Type	application/json
 
 Body
 
-    {
-        "event_type": "contact_edited",
-        "object_type": "contact",
-        "object_id": "17963208"
-    }
+```json
+{
+	"event_type"	: "contact_edited",
+	"object_type"	: "contact",
+	"object_id"		: "17963208"
+}
+```
 
 ### Delete
 
