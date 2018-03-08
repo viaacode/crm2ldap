@@ -24,7 +24,7 @@ Body
 {  
 	"event_type"	: "company_added",
 	"object_type"	: "company",
-	"object_id"		: "15669750"
+	"object_id"	: "15669750"
 }
 ```
 
@@ -40,7 +40,7 @@ Body
 {
 	"event_type"	: "company_added",
 	"object_type"	: "company",
-	"object_id"		: "15669750"
+	"object_id"	: "15669750"
 }
 ```
 
@@ -56,7 +56,7 @@ Body
 {
 	"event_type"	: "company_deleted",
 	"object_type"	: "company",
-	"object_id"		: "15669750"
+	"object_id"	: "15669750"
 }
 ```
 
@@ -78,7 +78,7 @@ Body
 {
 	"event_type"	: "related_contacts_updated",
 	"object_type"	: "company",
-	"object_id"		: "17521500"
+	"object_id"	: "17521500"
 }
 ```
 
@@ -94,7 +94,7 @@ Body
 {
 	"event_type"	: "contact_edited",
 	"object_type"	: "contact",
-	"object_id"		: "17963208"
+	"object_id"	: "17963208"
 }
 ```
 
