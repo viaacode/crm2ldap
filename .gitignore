@@ -1,10 +1,13 @@
 staging.properties
 production.properties
+local.properties
+.classpath
 catalog
 mappings
 src/main/app/mule-app.properties
 src/test
 .DS_Store
+*.log
 # Java defaults (https://github.com/github/gitignore/blob/master/Java.gitignore) #
 # --- #
 *.class

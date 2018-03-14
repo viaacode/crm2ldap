@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cluster="http://www.mulesoft.org/schema/mule/ee/cluster" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <configuration defaultExceptionStrategy-ref="globalChoice_Exception_Strategy" doc:name="Configuration">
+        <http:config useTransportForUris="false"/>
+    </configuration>
+    <choice-exception-strategy name="globalChoice_Exception_Strategy">
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-variable variableName="error_message" value="Failed to process message" doc:name="Set error_message"/>
+                <set-variable variableName="error_cause" value="#[exception.toString() + &quot;\n\n&quot; + message.payloadAs(java.lang.String)]" doc:name="Set error_cause"/>
+            <set-variable variableName="state" value="#['EXCEPTION']" doc:name="Variable - state"/>
+            <flow-ref name="log_elastic_search" doc:name="eSearch - EXCEPTION"/>
+            <set-property propertyName="http.status" value="400" doc:name="Property - 400"/>
+            <set-payload value="#[flowVars.error_message + &quot;\n&quot;+ flowVars.error_cause]" doc:name="Set Payload - error_message"/>
+                 </catch-exception-strategy>
+    </choice-exception-strategy>
+</mule>
