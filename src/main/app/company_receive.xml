@@ -12,9 +12,6 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <set-variable variableName="scenario" value="COMPANY_CREATE" doc:name="Variable - scenario"/>
         <flow-ref name="company_create_update" doc:name="company_create_update"/>
         <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
-        <async doc:name="Async">
-            <flow-ref name="contact_sync_crm_ldap" doc:name="Sync Contacts Beween CRM and LDAP"/>
-        </async>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Set Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/update">

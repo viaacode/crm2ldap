@@ -61,6 +61,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
             </async>
             <set-property propertyName="http.status" value="200" doc:name="Property - 200 - We give always back so that CRM does not retry"/>
             <set-payload value="#[flowVars.error_message + &quot;\n&quot; + flowVars.error_cause]" doc:name="Set Payload - error_message"/>
+            <logger message="ERROR HANDLER  - #[message]" level="WARN" doc:name="Logger"/>
                  </catch-exception-strategy>
     </choice-exception-strategy>
 </mule>

@@ -112,6 +112,7 @@ payload]]></dw:set-payload>
     </sub-flow>
     <sub-flow name="contacts_match_crm_ldap">
         <foreach doc:name="For Each - LDAP Contacts" collection="#[flowVars.ldap_contacts]">
+            <validation:is-false message="Only Technical Users may have an empty external id" expression="#[payload.getAttributes().getAttribute(&quot;employeeType&quot;) != 'Technical User' &amp;&amp; payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;) == null]" doc:name="Only Technical Users may have an empty external id"/>
             <scripting:component doc:name="Groovy - LDAP Entry HashMap">
                 <scripting:script engine="Groovy"><![CDATA[Map<String, String> ldap_entry_hm = new LinkedHashMap<String, String>();
 
