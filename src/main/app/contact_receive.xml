@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <flow name="contacts_related_receive">
+        <http:listener config-ref="crm-httpListenerConfig" path="/ldap/related_contacts/update" allowedMethods="POST" doc:name="HTTP - /ldap/related_contacts/update"/>
+        <set-variable variableName="scenario" value="CONTACTS_RELATED" doc:name="Variable - scenario"/>
+        <async doc:name="Async">
+            <flow-ref name="contacts_related_update" doc:name="contacts_related_update"/>
+        </async>
+        <set-payload value="#['Related contacts for ' + flowVars.object_id + ' Processed'] " mimeType="text/plain" doc:name="Set Response"/>
+        <set-property propertyName="http.status" value="200" doc:name="Property - 200 - We give always back so that CRM does not retry"/>
+        <logger message="RELATED END  - #[message]" level="WARN" doc:name="Logger"/>
+    </flow>
+    <flow name="contact_update_receive">
+        <http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/update" allowedMethods="POST" doc:name="HTTP - /ldap/contact/update"/>
+        <set-variable variableName="scenario" value="CONTACT_UPDATE" doc:name="Variable - scenario"/>
+        <flow-ref name="contact_update" doc:name="contact_update"/>
+        <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
+    </flow>
+    <flow name="contact_receive_for_delete">
+        <http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/delete" allowedMethods="GET" doc:name="HTTP - /ldap/contact/delete - GET"/>
+        <set-variable variableName="scenario" value="CONTACT_DELETE_GET" doc:name="Variable - scenario"/>
+        <flow-ref name="contact_delete" doc:name="contact_delete"/>
+        <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
+    </flow>
+</mule>

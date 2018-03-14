@@ -6,24 +6,25 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<sub-flow name="get_custom_fields">
-
-		<http:request config-ref="HTTP_Request_Configuration" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
-            <http:request-builder>
-                <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                <http:query-param paramName="for" value="#[flowVars.object_type]"/>
-            </http:request-builder>
-        </http:request>
-		<dw:transform-message doc:name="Transform Message - payload" metadata:id="e7be1efc-37e6-4603-97e3-132e75930a6b">
-			<dw:input-payload doc:sample="sample_data\json_2.json" mimeType="application/json"/>
-			<dw:set-payload><![CDATA[%dw 1.0
+        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
+            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
+                <http:request-builder>
+                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
+                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
+                    <http:query-param paramName="for" value="#[flowVars.object_type]"/>
+                </http:request-builder>
+            </http:request>
+        </until-successful>
+        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
+        <dw:transform-message doc:name="LinkedHashMap">
+            <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-		</dw:transform-message>
+        </dw:transform-message>
 		<set-variable variableName="custom_fields" value="#[payload]" doc:name="Variable - custom_fields"/>
         <set-variable variableName="state" value="#['GET_CUSTOM_FIELDS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - GET_CUSTOM_FIELDS"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
 	</sub-flow>
 	<flow name="get_custom_field_id" initialState="stopped">
 		<dw:transform-message doc:name="Transform Message - id">
@@ -65,7 +66,39 @@ payload splitBy ","]]></dw:set-payload>
 			</otherwise>
 		</choice>
 	</flow>
-    <sub-flow name="sector">
+	
+		<flow name="get_custom_field_values_contact" >
+		<dw:transform-message doc:name="Transform Message - custom_field_values">
+			<dw:set-variable variableName="custom_field_values"><![CDATA[%dw 1.0
+%output application/java
+---
+{
+}]]></dw:set-variable>
+		</dw:transform-message>
+        <set-variable variableName="custom_field_id" value="#[payload.custom_field_id]" doc:name="Variable - custom_field_id"/>
+		<dw:transform-message doc:name="Transform Message - value of custom field - contact">
+			<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+flowVars.contact.custom_fields[payload.custom_field_id]]]></dw:set-payload>
+		</dw:transform-message>
+		<choice doc:name="Choice - check for empty payload">
+			<when expression="payload != null &amp;&amp; payload.length() &gt; 0">
+
+				<dw:transform-message doc:name="Transform Message - Split  to ArrayList">
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload splitBy ","]]></dw:set-payload>
+				</dw:transform-message>
+
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger - isEmpty"/>
+			</otherwise>
+		</choice>
+	</flow>
+	 <sub-flow name="sector">
         <dw:transform-message doc:name="Transform Message">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java

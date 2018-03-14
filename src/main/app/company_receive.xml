@@ -9,24 +9,31 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
     <flow name="HTTP-/ldap/company/create">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/create" allowedMethods="POST" doc:name="HTTP create"/>
-        <flow-ref name="company_create_update" doc:name="Company Creat Update"/>
-        <flow-ref name="update_company_with_or_number" doc:name="Update OR Number"/>
+        <set-variable variableName="scenario" value="COMPANY_CREATE" doc:name="Variable - scenario"/>
+        <flow-ref name="company_create_update" doc:name="company_create_update"/>
+        <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Set Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/update">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/update" allowedMethods="POST" doc:name="HTTP update"/>
-        <flow-ref name="company_create_update" doc:name="Company Creat Update"/>
-        <flow-ref name="update_company_with_or_number" doc:name="Update OR Number"/>
+        <set-variable variableName="scenario" value="COMPANY_UPDATE" doc:name="Variable - scenario"/>
+        <flow-ref name="company_create_update" doc:name="company_create_update"/>
+        <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
+        <async doc:name="Async">
+            <flow-ref name="contact_sync_crm_ldap" doc:name="Sync Contacts Beween CRM and LDAP"/>
+        </async>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/delete_get">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/delete" allowedMethods="GET" doc:name="HTTP delete - GET"/>
-        <logger message="DELETE GET #[payload]" level="INFO" doc:name="Logger"/>
-        <flow-ref name="company_delete_get" doc:name="Company Delete Get"/>
+        <set-variable variableName="scenario" value="COMPANY_DELETE_GET" doc:name="Variable - scenario"/>
+        <flow-ref name="company_delete_get" doc:name="company_delete_get"/>
+        <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
     <flow name="HTTP-/ldap/company/delete_post">
         <http:listener config-ref="crm-httpListenerConfig" path="/ldap/company/delete" allowedMethods="POST" doc:name="HTTP delete - POST"/>
-        <flow-ref name="company_delete" doc:name="Company Delete"/>
+        <set-variable variableName="scenario" value="COMPANY_DELETE_POST" doc:name="Variable - scenario"/>
+        <flow-ref name="company_delete" doc:name="company_delete"/>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
 </mule>

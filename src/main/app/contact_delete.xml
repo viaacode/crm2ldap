@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+    <sub-flow name="contact_delete">
+        <set-variable variableName="event_id" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Variable - event_id"/>
+        <set-variable variableName="contact_uuid" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Variable - contact_uuid"/>
+        <logger message="Contact Delete (Get) for UUID #[flowVars.contact_uuid]" level="INFO" doc:name="Contact Delete (Get) for UUID"/>
+        <flow-ref name="contact_get_by_uuid" doc:name="Get Contact by UUID"/>
+        <set-variable variableName="state" value="CONTACT_DELETE_REQUEST" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="ldap_contact_delete" doc:name="LDAP Contact Delete"/>
+        <set-variable variableName="result" value="Contact Deleted in LDAP" doc:name="Variable - result"/>
+        <set-variable variableName="state" value="CONTACT_DELETED" doc:name="Variable - state"/>
+        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+    </sub-flow>
+</mule>
