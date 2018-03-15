@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+    <sub-flow name="ldap_set_business_category">
+        <choice doc:name="Category">
+            <when expression="#[flowVars.category_content_partner == true]">
+                <set-variable variableName="ldap_business_category" value="#[&quot;Content Partner&quot;]" doc:name="Set LDAP Business Category to Content Partner"/>
+            </when>
+            <when expression="#[flowVars.category_digitaliseringpartner == true]">
+                <set-variable variableName="ldap_business_category" value="#[&quot;Service Provider&quot;]" doc:name="Set LDAP Business Category to Service Provider"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="ldap_business_category" value="#[&quot;Customer&quot;]" doc:name="Set LDAP Business Category to Customer"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
     <sub-flow name="checks">
         <dw:transform-message doc:name="Retrieve : type|kring|relatie">
             <dw:set-payload><![CDATA[%dw 1.0
@@ -31,36 +45,38 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
         )
 }]]></dw:set-payload>
         </dw:transform-message>
-        <set-variable variableName="type_organization" value="#[(payload[&quot;type&quot;])[0]]" doc:name="Set type_organization"/>
+        <set-variable variableName="type_organization" value="#[payload[&quot;type&quot;] != null ? (payload[&quot;type&quot;])[0] : null]" doc:name="Set type_organization"/>
         <enricher  target="#[flowVars.xref_sectors]" doc:name="Message Enricher">
-            <flow-ref name="xref_type2sector" doc:name="XREF To Sector"/>
+            <flow-ref name="xref_type2sector" doc:name="xref_type2sector"/>
         </enricher>
         <set-variable variableName="ldap_sector" value="#[flowVars.xref_sectors.get(flowVars.type_organization)]" doc:name="Set ldap_sector"/>
         <set-variable variableName="category_viaa" value="#[flowVars.company.name == &quot;VIAA&quot;]" doc:name="Set category_viaa"/>
         <set-variable variableName="category_content_partner" value="#[payload[&quot;kring&quot;] != null]" doc:name="Set category_content_partner"/>
         <set-variable variableName="category_digitaliseringpartner" value="#[(payload[&quot;type&quot;] != null) &amp;&amp; (payload[&quot;relatie&quot;] != null) &amp;&amp; (payload[&quot;type&quot;]).contains(dw(&quot;p('teamleader.custom_field.digitaliseringsbedrijf')&quot;)) &amp;&amp; (payload[&quot;relatie&quot;]).contains(dw(&quot;p('teamleader.custom_field.leverancier')&quot;))]" doc:name="Set category_digitaliseringpartner"/>
         <set-variable variableName="category_customer" value="#[(payload[&quot;relatie&quot;] != null) &amp;&amp; (payload[&quot;relatie&quot;]).contains(dw(&quot;p('teamleader.custom_field.dienstenafnemer')&quot;))]" doc:name="Set category_customer"/>
-        <set-variable variableName="check_sector" value="#[(flowVars.category_content_partner == true &amp;&amp; flowVars.ldap_sector != null) || (flowVars.category_customer == true &amp;&amp; flowVars.ldap_sector != null) || (flowVars.category_digitaliseringpartner == true)]" doc:name="CHECK -- Set check_sector" doc:description="(flowVars.category_content_partner == true &amp;&amp; flowVars.ldap_sector != null) || 
-(flowVars.category_customer == true &amp;&amp; flowVars.ldap_sector != null) ||
-(flowVars.category_digitaliseringpartner == true)  --&gt; when digitilaseringspartner sector does not matter"/>
-        <set-variable variableName="check_category" value="#[(flowVars.category_content_partner == true &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == true &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == true) || flowVars.category_viaa == true]" doc:name="CHECK -- Set check_category - Check if Category Content Partner | Category Digi Partner | Category Customer | VIAA - Only one Category can be true!" doc:description="(flowVars.category_content_partner == true &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == true &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == true) || flowVars.category_viaa == true"/>
+        <set-variable variableName="check_sector" value="#[(flowVars.category_content_partner == true &amp;&amp; flowVars.ldap_sector != null) || (flowVars.category_customer == true &amp;&amp; flowVars.ldap_sector != null) || (flowVars.category_digitaliseringpartner == true) || (flowVars.category_viaa == true)]" doc:name="CHECK -- Set check_sector" doc:description="(flowVars.category_content_partner == true &amp;&amp; flowVars.ldap_sector != null) ||  --&gt; sector must have a value!   (flowVars.category_customer == true &amp;&amp; flowVars.ldap_sector != null) || --&gt; sector must have a value!   (flowVars.category_digitaliseringpartner == true) ||  --&gt; when digitilaseringspartner sector does not matter  (flowVars.category_viaa == true)  --&gt; when viaa sector does not matter"/>
+        <set-variable variableName="check_category" value="#[(flowVars.category_content_partner == true &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == true &amp;&amp; flowVars.category_customer == false) || (flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == true) || flowVars.category_viaa == true]" doc:name="CHECK -- Set check_category - Check if Category Content Partner | Category Digi Partner | Category Customer | VIAA - Only one Category can be true!" doc:description="(flowVars.category_content_partner == true &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == false) || 
+(flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == true &amp;&amp; flowVars.category_customer == false) || 
+(flowVars.category_content_partner == false &amp;&amp; flowVars.category_digitaliseringpartner == false &amp;&amp; flowVars.category_customer == true) ||  
+flowVars.category_viaa == true
+
+One of 
+- content_partner
+- digitaliseringpartner 
+- customer
+
+--&gt; (and only one!) must be true
+
+or must be VIAA"/>
         <set-variable variableName="checks_passed" value="#[flowVars.check_sector &amp;&amp; flowVars.check_category]" doc:name="Set checks_passed"/>
+        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Set or_number"/>
         <set-variable variableName="state" value="#['CHECKS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch - CHECKS"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
         <choice doc:name="Passed?">
             <when expression="#[flowVars.checks_passed]">
                 <logger message="Company '#[flowVars.company.name]' (id='#[flowVars.company.id]') passed all the checks and will be sent to LDAP" level="INFO" doc:name="Passed"/>
-                <choice doc:name="Category">
-                    <when expression="#[flowVars.category_content_partner == true]">
-                        <set-variable variableName="ldap_business_category" value="#[&quot;Content Partner&quot;]" doc:name="Set LDAP Business Category to Content Partner"/>
-                    </when>
-                    <when expression="#[flowVars.category_digitaliseringpartner == true]">
-                        <set-variable variableName="ldap_business_category" value="#[&quot;Service Provider&quot;]" doc:name="Set LDAP Business Category to Service Provider"/>
-                    </when>
-                    <otherwise>
-                        <set-variable variableName="ldap_business_category" value="#[&quot;Customer&quot;]" doc:name="Set LDAP Business Category to Customer"/>
-                    </otherwise>
-                </choice>
+                <flow-ref name="ldap_set_business_category" doc:name="Set LDAP Business Category"/>
+                <set-variable variableName="company_has_relaed_contacts" value="#[payload.company]" doc:name="Variable - company_has_relaed_contacts"/>
 
             </when>
             <otherwise>
@@ -70,7 +86,7 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
         </choice>
         <choice doc:name="When VIAA">
             <when expression="#[flowVars.category_viaa == true]">
-                <set-variable variableName="ldap_business_category" value="#[&quot;Service Provider&quot;]" doc:name="LDAP Business Category to Service Provider"/>
+                <set-variable variableName="ldap_business_category" value="#[&quot;Content Partner&quot;]" doc:name="LDAP Business Category to Content Partner"/>
             </when>
             <otherwise>
                 <logger message="Not VIAA" level="INFO" doc:name="Do Nothing"/>
