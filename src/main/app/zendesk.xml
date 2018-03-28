@@ -49,7 +49,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         </choice>
 
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="ZENDESK TICKET : #[payload]" level="INFO" doc:name="zendesk ticket"/>
+        <logger message="ZENDESK TICKET : #[payload]" level="WARN" doc:name="zendesk ticket"/>
         <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
             <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
                 <http:request-builder>
@@ -58,9 +58,9 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             </http:request>
         </until-successful>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="ZENDESK HTTP Response - #[payload]" level="INFO" doc:name="Logger"/>
+        <logger message="ZENDESK HTTP Response - #[payload]" level="WARN" doc:name="Logger"/>
         <set-variable variableName="ticket" value="#[payload]" doc:name="ticket"/>
         <set-variable variableName="state" value="ZENDESK_TICKET_CREATED" doc:name="state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>

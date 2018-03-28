@@ -29,7 +29,6 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 	        </ldap:extended-configuration>
         <reconnect/>
    	</ldap:config>
-    <context:property-placeholder location="${mule.env}.properties"/>
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
     <sub-flow name="ldap_contact_entry_to_update">
         <flow-ref name="ldap_contact_get_object_classes" doc:name="ldap_contact_get_object_classes"/><scripting:component doc:name="LDAP Entry">
@@ -298,15 +297,7 @@ return entryToAdd]]></scripting:script>
                 </foreach>
             </otherwise>
         </choice>
-        <choice doc:name="Check if Zendesk Ticket">
-            <when expression="#[flowVars.create_zendesk_ticket == true]">
-                <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
-            </when>
-            <otherwise>
-                <logger message="No zendesk ticket" level="INFO" doc:name="Logger - do Nothing"/>
-            </otherwise>
-        </choice>
-        <set-variable variableName="state" value="CONTACTS_EXECUTE_LDAP_ACTIONS" doc:name="Variable - state"/>
+        <set-variable variableName="state" value="LDAP_ACTIONS_COMPLETED" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
     <sub-flow name="ldap_contact_add">
@@ -348,7 +339,7 @@ return entryToAdd]]></scripting:script>
 }]]></dw:set-payload>
         </dw:transform-message>
         <set-variable variableName="uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid"/>
-        <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
+        <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
         <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname + ' met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP.' + &quot;\n\n&quot; + 'Moet dit contact ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
@@ -358,12 +349,13 @@ return entryToAdd]]></scripting:script>
                 <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld (TEST)" doc:name="Variable - ticket_subject TEST"/>
             </otherwise>
         </choice>
-        <set-variable variableName="create_zendesk_ticket" value="true" doc:name="Variable - create_zendesk_ticket = true"/>
+        <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
+        <logger message="After create_zendesk_ticket - #[flowVars.create_zendesk_ticket]" level="WARN" doc:name="Logger"/>
     </sub-flow>
     <sub-flow name="ldap_contact_delete">
 
         <ldap:delete config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Delete Entry"/>
-        <flow-ref name="get_contact" doc:name="Get Contact from CRM"/>
+        <flow-ref name="get_contact" doc:name="get_contact"/>
         <dw:transform-message doc:name="get uuid value from contact user id">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
@@ -384,9 +376,13 @@ return entryToAdd]]></scripting:script>
             </when>
             <otherwise>
                 <set-variable variableName="ldap_entry_uuid" value="#['']" doc:name="Variable - ldap_entry_uuid to blank"/>
-                <flow-ref name="contact_set_uuid" doc:name="Blank uuid in crm"/>
+                <flow-ref name="contact_set_uuid" doc:name="contact_set_uuid"/>
+                <set-variable variableName="state" value="CONTACT_UUID_CLEARED" doc:name="state"/>
+                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
                 <flow-ref name="contact_clear_roles" doc:name="contact_clear_roles"/>
-                <set-variable variableName="result" value="#['UUID and Rokes are cleared in CRM']" doc:name="Variable - result"/>
+                <set-variable variableName="state" value="CONTACT_ROLES_CLEARED" doc:name="state"/>
+                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+                <set-variable variableName="result" value="#['UUID and Roles are cleared in CRM']" doc:name="Variable - result"/>
             </otherwise>
         </choice>
 

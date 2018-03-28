@@ -20,7 +20,7 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="get_company" doc:name="get_company"/>
-        <set-variable variableName="href_link" value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + ')']" doc:name="Variable - href_link"/>
+        <set-variable variableName="href_link" value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
         <set-variable variableName="ticket_body" value="#[flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP.' + &quot;\n\n&quot; +' Moet dit bedrijf ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="ticket_body"/>
         <choice doc:name="Choice - environment">
             <when expression="#[flowVars.environment == 'production']">
@@ -51,7 +51,7 @@ payload]]></dw:set-payload>
                 <set-payload value="#[&quot;Company has been deleted in LDAP&quot;]" mimeType="text/html" doc:name="Company has been deleted in LDAP"/>
                 <set-variable variableName="or_number" value="#['']" doc:name="Variable - or_number (clear)"/>
                 <set-variable variableName="update_or_number_in_teamleader" value="true" doc:name="Variable - update_or_number_in_teamleader"/>
-                <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number (clear OR Number)"/>
+                <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
             </otherwise>
         </choice>
         <set-variable variableName="result" value="Company Deleted in LDAP" doc:name="Variable - result"/>

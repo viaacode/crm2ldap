@@ -37,7 +37,7 @@ return payload]]></scripting:script>
                 <logger message="No OR number available" level="INFO" doc:name="No OR Number - Stop"/>
             </when>
             <otherwise>
-                <flow-ref name="contact_sync_crm_ldap" doc:name="Sync Contacts between CRM and LDAP"/>
+                <flow-ref name="contact_sync_crm_ldap" doc:name="contact_sync_crm_ldap"/>
             </otherwise>
         </choice>
 

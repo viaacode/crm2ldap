@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <async doc:name="Async">
             <flow-ref name="contacts_related_update" doc:name="contacts_related_update"/>
         </async>
-        <set-payload value="#['Related contacts for ' + flowVars.object_id + ' Processed'] " mimeType="text/plain" doc:name="Set Response"/>
+        <set-payload value="#['Related contacts processed'] " mimeType="text/plain" doc:name="Set Response"/>
         <set-property propertyName="http.status" value="200" doc:name="Property - 200 - We give always back so that CRM does not retry"/>
         <logger message="RELATED END  - #[message]" level="WARN" doc:name="Logger"/>
     </flow>

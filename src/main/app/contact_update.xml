@@ -36,7 +36,7 @@ payload]]></dw:set-payload>
 			<otherwise>
 				<set-variable variableName="contact_id" value="#[flowVars.object_id]"
 					doc:name="Set contact_id" />
-				<flow-ref name="get_contact" doc:name="Get CRM Contact" />
+				<flow-ref name="get_contact" doc:name="get_contact" />
 				<flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields" />
 				<flow-ref name="contact_get_or_number_from_company"
 					doc:name="contact_get_or_number_from_company" />

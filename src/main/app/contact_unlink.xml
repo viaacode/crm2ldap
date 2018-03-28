@@ -12,7 +12,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
     <sub-flow name="contact_unlink_zendesk_ticket_body">
         <foreach collection="#[flowVars.ldap_contacts]" doc:name="For Each">
             <set-variable variableName="uuid" value="#[payload.getAttributes().getAttribute(&quot;entryUUID&quot;).getValue()]" doc:name="Variable - uuid"/>
-            <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + ')']" doc:name="Variable - href_link"/>
+            <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
             <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname 'met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.ldap_entry_uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP. Moet dit contact ook in LDAP verwijderd worden?' + &quot;\n\n&quot; + '- Dit is een test voor de CRM integratie met LDAP. Ticket toewijzen aan Tine Philips. Verder te negeren.'  + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
         </foreach>
     </sub-flow>
@@ -36,7 +36,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
     </sub-flow>
     <sub-flow name="contact_unlink">
         <logger message="If company #[company.id] has related contacts they will be unlinked in LDAP (clear o attribute) and CRM (clear uuid)" level="INFO" doc:name="If company has related contacts they will be unlinked in LDAP and CRM"/>
-        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="LDAP - Get all contacts for company"/>
+        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="ldap_get_all_contacts_for_company"/>
         <choice doc:name="Check ldap_contacts">
             <when expression="#[flowVars.ldap_contacts.size() == 0]">
                 <logger level="INFO" doc:name="Is null do nothing" message="Do Nothing"/>
@@ -47,7 +47,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
                     <set-variable variableName="contact_id" value="#[payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;).getValue()]" doc:name="Set contact_id"/>
                     <set-variable variableName="contact_uuid" value="#[payload.getAttributes().getAttribute('entryUUID').value]" doc:name="Variable - contact_uuid"/>
                     <set-variable variableName="contact_name" value="#[payload.getAttributes().getAttribute('cn').value]" doc:name="Variable -  contact_name"/>
-                    <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.contact_uuid + ')']" doc:name="Variable - href_link"/>
+                    <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.contact_uuid + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
                     <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n\n' + '  * ' + flowVars.contact_name + ' (' + flowVars.contact_id + ') : ' + flowVars.href_link]" doc:name="Variable - ticket_body (extend)"/>
                 </foreach>
             </otherwise>

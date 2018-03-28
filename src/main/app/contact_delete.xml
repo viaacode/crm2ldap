@@ -10,13 +10,13 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
     <sub-flow name="contact_delete">
         <set-variable variableName="event_id" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Variable - event_id"/>
         <set-variable variableName="contact_uuid" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Variable - contact_uuid"/>
-        <logger message="Contact Delete (Get) for UUID #[flowVars.contact_uuid]" level="INFO" doc:name="Contact Delete (Get) for UUID"/>
-        <flow-ref name="contact_get_by_uuid" doc:name="Get Contact by UUID"/>
+        <logger message="Contact Delete (Get) for UUID #[flowVars.contact_uuid]" level="WARN" doc:name="Contact Delete (Get) for UUID"/>
+        <flow-ref name="contact_get_by_uuid" doc:name="contact_get_by_uuid"/>
         <set-variable variableName="state" value="CONTACT_DELETE_REQUEST" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
-        <flow-ref name="ldap_contact_delete" doc:name="LDAP Contact Delete"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+        <flow-ref name="ldap_contact_delete" doc:name="ldap_contact_delete"/>
         <set-variable variableName="result" value="Contact Deleted in LDAP" doc:name="Variable - result"/>
         <set-variable variableName="state" value="CONTACT_DELETED" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="eSearch"/>
+        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
 </mule>

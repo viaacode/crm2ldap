@@ -75,7 +75,7 @@ or must be VIAA"/>
         <choice doc:name="Passed?">
             <when expression="#[flowVars.checks_passed]">
                 <logger message="Company '#[flowVars.company.name]' (id='#[flowVars.company.id]') passed all the checks and will be sent to LDAP" level="INFO" doc:name="Passed"/>
-                <flow-ref name="ldap_set_business_category" doc:name="Set LDAP Business Category"/>
+                <flow-ref name="ldap_set_business_category" doc:name="ldap_set_business_category"/>
                 <set-variable variableName="company_has_relaed_contacts" value="#[payload.company]" doc:name="Variable - company_has_relaed_contacts"/>
 
             </when>

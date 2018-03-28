@@ -6,7 +6,7 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10002" doc:name="HTTP Listener Configuration"/>
+    <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10012" doc:name="HTTP Listener Configuration"/>
     <context:property-placeholder location="${mule.env}.properties"/>
     <sub-flow name="company_create_update">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
@@ -23,7 +23,7 @@ payload]]></dw:set-payload>
         <flow-ref name="checks" doc:name="checks"/>
         <choice doc:name="Checks OK | NOK">
             <when expression="#[flowVars.checks_passed == &quot;true&quot;]">
-                <flow-ref name="get_or_number" doc:name="OK - get_or_number"/>
+                <flow-ref name="get_or_number" doc:name="get_or_number"/>
                 <flow-ref name="ldap_check_if_company" doc:name="ldap_check_if_company"/>
                 <choice doc:name="Company - Excists?">
                     <when expression="#[flowVars.company_excists == true]">
@@ -35,7 +35,7 @@ payload]]></dw:set-payload>
                 </choice>
             </when>
             <otherwise>
-                <flow-ref name="company_checks_nok" doc:name="NOK - Company did not pass checks - Check if Zendesk ticket is needed if there was a delete or Unlink Contacts"/>
+                <flow-ref name="company_checks_nok" doc:name="company_checks_nok"/>
                
             </otherwise>
         </choice>
@@ -50,14 +50,14 @@ payload]]></dw:set-payload>
                     </when>
                     <otherwise>
                         <set-variable variableName="ticket_body" value="#['Het bedrijf ' + flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' is gewijzigd, en is geen Content Partner | Digitaliserings Partner | Diensten Afnemer meer. Dit bedrijf heeft een account in LDAP.']" doc:name="Variable - ticket_body"/>
-                        <flow-ref name="contact_unlink" doc:name="Check For Contacts that needs to be Unlinked from company"/>
-                <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n* Indien u alle contacten heeft verwijderd kunt u het bedrijf verwijderen uit LDAP. Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + '\n  * [Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + ')']" doc:name="Variable ticket_body (extend)"/>
+                        <flow-ref name="contact_unlink" doc:name="contact_unlink"/>
+                <set-variable variableName="ticket_body" value="#[flowVars.ticket_body + '\n* Indien u alle contacten heeft verwijderd kunt u het bedrijf verwijderen uit LDAP. Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + '\n  * [Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable ticket_body (extend)"/>
                         <choice doc:name="Choice - environment">
                             <when expression="#[flowVars.environment == 'production']">
-                                <set-variable variableName="ticket_subject" value="Teamleader: een bedrijf is gewijzigd en behoord niet meer tot een van de LDAP Categorieen" doc:name="Variable - ticket_subject"/>
+                                <set-variable variableName="ticket_subject" value="Teamleader: een bedrijf is gewijzigd en behoort niet meer tot een van de LDAP Categorieen" doc:name="Variable - ticket_subject"/>
                             </when>
                             <otherwise>
-                                <set-variable variableName="ticket_subject" value="Teamleader: een bedrijf is gewijzigd en behoord niet meer tot een van de LDAP Categorieen (TEST)" doc:name="Variable - ticket_subject (TEST)"/>
+                                <set-variable variableName="ticket_subject" value="Teamleader: een bedrijf is gewijzigd en behoort niet meer tot een van de LDAP Categorieen (TEST)" doc:name="Variable - ticket_subject (TEST)"/>
                             </otherwise>
                         </choice>
                         <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>

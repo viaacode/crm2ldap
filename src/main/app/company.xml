@@ -12,7 +12,6 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
-    <context:property-placeholder location="${mule.env}.properties"/>
     <http:proxy name="Proxy_Configuration" host="proxy.do.viaa.be" port="80" doc:name="Proxy Configuration"/>
     <http:request-config name="HTTP_Request_Configuration_Teamleader" doc:name="HTTP Request Configuration" basePath="/api" host="${teamleader.host}" port="443" protocol="HTTPS" proxy-ref="Proxy_Configuration"/>
     <sub-flow name="update_company_with_or_number">
