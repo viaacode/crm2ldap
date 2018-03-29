@@ -20,7 +20,14 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <flow-ref name="company_create_update" doc:name="company_create_update"/>
         <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
         <async doc:name="Async">
-            <flow-ref name="contact_sync_crm_ldap" doc:name="contact_sync_crm_ldap"/>
+            <choice doc:name="ldap_entry_excists?">
+                <when expression="#[flowVars.ldap_entry_excists == false]">
+                    <logger message="ldap_entry_excists = false - do not sync contacts" level="INFO" doc:name="false - Do Nothing"/>
+                </when>
+                <otherwise>
+                    <flow-ref name="contact_sync_crm_ldap" doc:name="contact_sync_crm_ldap"/>
+                </otherwise>
+            </choice>
         </async>
         <set-payload value="#[flowVars.result]" mimeType="text/plain" doc:name="Payload - result"/>
     </flow>
