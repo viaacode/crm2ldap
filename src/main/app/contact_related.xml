@@ -25,19 +25,19 @@ payload]]></dw:set-payload>
         </dw:transform-message>
         <flow-ref name="set_variables" doc:name="set_variables"/>
         <flow-ref name="get_company" doc:name="get_company"/>
-        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Set or_number"/>
-        <choice doc:name="Check if or_number">
-            <when expression="#[flowVars.or_number == null]">
+        <flow-ref name="checks" doc:name="checks"/>
+        <choice doc:name="Check if or_number is available and checks are passed">
+            <when expression="#[flowVars.or_number == null || flowVars.checks_passed != true]">
                 <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
                 <scripting:component doc:name="Set ldap contact actions to stop">
                     <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.object_id,"no_or_stop")
 
 return payload]]></scripting:script>
                 </scripting:component>
-                <logger message="No OR number available" level="INFO" doc:name="No OR Number - Stop"/>
+                <logger message="No OR number available or did not pass the company checks" level="INFO" doc:name="No OR Number - Stop"/>
             </when>
             <otherwise>
-                <flow-ref name="contact_sync_crm_ldap" doc:name="contact_sync_crm_ldap"/>
+                <flow-ref name="contact_sync_crm_ldap" doc:name="YES - contact_sync_crm_ldap"/>
             </otherwise>
         </choice>
 
