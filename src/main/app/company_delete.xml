@@ -27,6 +27,7 @@ payload]]></dw:set-payload>
 		</dw:transform-message>
 		<flow-ref name="set_variables" doc:name="set_variables" />
 		<flow-ref name="get_company" doc:name="get_company" />
+        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
 		<flow-ref name="ldap_check_if_company" doc:name="Check if Comapny Excists in LDAP" />
 		<flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list" />
 		<choice doc:name="Check if company not exists or is on skip list">
@@ -45,6 +46,7 @@ payload]]></dw:set-payload>
 				<set-variable variableName="ticket_body"
 					value="#[flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP.' + &quot;\n\n&quot; +' Moet dit bedrijf ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]"
 					doc:name="ticket_body" />
+                <flow-ref name="contact_unlink" doc:name="Extend boidy with contacts to unlink"/>
 				<choice doc:name="Choice - environment">
 					<when expression="#[flowVars.environment == 'production']">
 						<set-variable variableName="ticket_subject"
