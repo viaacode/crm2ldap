@@ -1,59 +1,101 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <sub-flow name="company_delete">
-        <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
-        <dw:transform-message doc:name="JSON to JAVA" metadata:id="a132686a-007f-4a77-9674-1826616d4c7d">
-            <dw:input-payload doc:sample="C:\Users\Rob\Dropbox\Projects\VIAA\company_deleted_input.json" mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+	<sub-flow name="company_delete">
+		<logger
+			message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]"
+			level="INFO" doc:name="Log Input Data" />
+		<dw:transform-message doc:name="JSON to JAVA"
+			metadata:id="a132686a-007f-4a77-9674-1826616d4c7d">
+			<dw:input-payload
+				doc:sample="C:\Users\Rob\Dropbox\Projects\VIAA\company_deleted_input.json"
+				mimeType="application/json" />
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-        <flow-ref name="set_variables" doc:name="set_variables"/>
-        <flow-ref name="get_company" doc:name="get_company"/>
-        <set-variable variableName="href_link" value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
-        <set-variable variableName="ticket_body" value="#[flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP.' + &quot;\n\n&quot; +' Moet dit bedrijf ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="ticket_body"/>
-        <choice doc:name="Choice - environment">
-            <when expression="#[flowVars.environment == 'production']">
-                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd']" doc:name="Set ticket_subject for Production"/>
-            </when>
-            <otherwise>
-                <set-variable variableName="ticket_subject" value="#['Teamleader: een bedrijf werd verwijderd (TEST)']" doc:name="Set ticket_subject for Test"/>
-            </otherwise>
-        </choice>
-        <logger message="Going to create a Zendesk ticket to delete company : #[flowVars.company.name]" level="INFO" doc:name="Logger"/>
-        <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
-
-        <set-variable variableName="result" value="#['Wait for approval for deletion']" doc:name="Variable - result"/>
-    </sub-flow>
-    <sub-flow name="company_delete_get">
-         <set-variable variableName="object_id" value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]" doc:name="Set  object_id"/>
-        <logger message="Company Delete (Get) for #[flowVars.object_id]" level="INFO" doc:name="Company Delete"/>
-        <flow-ref name="get_company" doc:name="get_company"/>
-        <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
-        <set-variable variableName="state" value="#['COMPANY_DELETE']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-        <choice doc:name="OR Number available?">
-            <when expression="#[flowVars.or_number == null]">
-                <set-payload value="#[&quot;Company not deleted because it does not have an OR Number&quot;]" mimeType="text/html" doc:name="Not deleted - No OR Number"/>
-            </when>
-            <otherwise>
-                <flow-ref name="ldap_delete_organization" doc:name="ldap_delete_organization"/>
-                <set-payload value="#[&quot;Company has been deleted in LDAP&quot;]" mimeType="text/html" doc:name="Company has been deleted in LDAP"/>
-                <set-variable variableName="or_number" value="#['']" doc:name="Variable - or_number (clear)"/>
-                <set-variable variableName="update_or_number_in_teamleader" value="true" doc:name="Variable - update_or_number_in_teamleader"/>
-                <flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number"/>
-            </otherwise>
-        </choice>
-        <set-variable variableName="result" value="Company Deleted in LDAP" doc:name="Variable - result"/>
-    </sub-flow>
+		</dw:transform-message>
+		<flow-ref name="set_variables" doc:name="set_variables" />
+		<flow-ref name="get_company" doc:name="get_company" />
+		<flow-ref name="ldap_check_if_company" doc:name="Check if Comapny Excists in LDAP" />
+		<flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list" />
+		<choice doc:name="Check if company not exists or is on skip list">
+			<when expression="#[flowVars.company_skip == true || company_excists == false]">
+				<set-variable variableName="state" value="COMPANY_SKIPPED_OR_NOT_LDAP"
+					doc:name="TRUE : Variable - state - company skipped or not in ldap" />
+				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+				<set-variable variableName="result"
+					value="Company not deleted because it is on the skip list or not in LDAP"
+					doc:name="Variable - result" />
+			</when>
+			<otherwise>
+				<set-variable variableName="href_link"
+					value="#['[Link om Bedrijf Definitief te verwijderen]' + '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/company/delete?id=&quot; + flowVars.company.id + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']"
+					doc:name="Variable - href_link" />
+				<set-variable variableName="ticket_body"
+					value="#[flowVars.company.name + ' met Teamleader ID ' + flowVars.company.id + ' en OR-ID ' + flowVars.or_number + ' werd verwijderd uit Teamleader. Dit bedrijf heeft een account in LDAP.' + &quot;\n\n&quot; +' Moet dit bedrijf ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]"
+					doc:name="ticket_body" />
+				<choice doc:name="Choice - environment">
+					<when expression="#[flowVars.environment == 'production']">
+						<set-variable variableName="ticket_subject"
+							value="#['Teamleader: een bedrijf werd verwijderd']" doc:name="Set ticket_subject for Production" />
+					</when>
+					<otherwise>
+						<set-variable variableName="ticket_subject"
+							value="#['Teamleader: een bedrijf werd verwijderd (TEST)']"
+							doc:name="Set ticket_subject for Test" />
+					</otherwise>
+				</choice>
+				<logger
+					message="Going to create a Zendesk ticket to delete company : #[flowVars.company.name]"
+					level="INFO" doc:name="Logger" />
+				<flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket" />
+				<set-variable variableName="result"
+					value="#['Wait for approval for deletion']" doc:name="Variable - result" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="company_delete_get">
+		<set-variable variableName="object_id"
+			value="#[message.inboundProperties.'http.query.params'.get(&quot;id&quot;)]"
+			doc:name="Set  object_id" />
+		<logger message="Company Delete (Get) for #[flowVars.object_id]"
+			level="INFO" doc:name="Company Delete" />
+		<flow-ref name="get_company" doc:name="get_company" />
+		<set-variable variableName="or_number"
+			value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]"
+			doc:name="Variable - or_number" />
+		<set-variable variableName="state" value="#['COMPANY_DELETE']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+		<choice doc:name="OR Number available?">
+			<when expression="#[flowVars.or_number == null]">
+				<set-payload
+					value="#[&quot;Company not deleted because it does not have an OR Number&quot;]"
+					mimeType="text/html" doc:name="Not deleted - No OR Number" />
+			</when>
+			<otherwise>
+				<flow-ref name="ldap_delete_organization" doc:name="ldap_delete_organization" />
+				<set-payload value="#[&quot;Company has been deleted in LDAP&quot;]"
+					mimeType="text/html" doc:name="Company has been deleted in LDAP" />
+				<set-variable variableName="or_number" value="#['']"
+					doc:name="Variable - or_number (clear)" />
+				<set-variable variableName="update_or_number_in_teamleader"
+					value="true" doc:name="Variable - update_or_number_in_teamleader" />
+				<flow-ref name="update_company_with_or_number" doc:name="update_company_with_or_number" />
+			</otherwise>
+		</choice>
+		<set-variable variableName="result" value="Company Deleted in LDAP"
+			doc:name="Variable - result" />
+	</sub-flow>
 </mule>

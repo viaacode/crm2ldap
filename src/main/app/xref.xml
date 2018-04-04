@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -9,7 +9,9 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <quartz:connector name="Quartz" validateConnections="true" doc:name="Quartz"/>
     <sub-flow name="xref_type2sector">
         <ee:cache doc:name="Cache">
             <parse-template location="${environment}_xref_type_sector.json" doc:name="Read - xref_type_sector.json" metadata:id="e1761f6d-3d96-44e4-8ca9-557adbdcea39"/>
@@ -20,6 +22,26 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 ---
 payload]]></dw:set-payload>
             </dw:transform-message>
+        </ee:cache>
+    </sub-flow>
+     <sub-flow name="xref_company_skip">
+        <ee:cache doc:name="Cache">
+            <parse-template location="${environment}_xref_company_skip.json" doc:name="Read - xref_company_skip.json" metadata:id="e1761f6d-3d96-44e4-8ca9-557adbdcea39"/>
+            <json:json-to-object-transformer doc:name="JSON to Object"/>
+            <dw:transform-message doc:name="ArrayList">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+            </dw:transform-message>
+            <choice doc:name="Check if company in skip list">
+                <when expression="#[payload.indexOf((flowVars.company.id).toString()) &gt;= 0]">
+                    <set-variable variableName="company_skip" value="true" doc:name="Set company_skip = true"/>
+                </when>
+                <otherwise>
+                    <set-variable variableName="company_skip" value="false" doc:name="Set company_skip = false"/>
+                </otherwise>
+            </choice>
         </ee:cache>
     </sub-flow>
 </mule>
