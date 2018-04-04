@@ -66,7 +66,7 @@ payload]]></dw:set-payload>
 					<flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update" />
 					<ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify" />
 					<choice doc:name="Check if email has been changed">
-						<when expression="#[flowVars.contact.email == flowVars.ldap_mail]">
+						<when expression="#[(flowVars.contact.email).toLowerCase() == (flowVars.ldap_mail).toLowerCase()]">
 							<logger message="Email '#[flowVars.contact.email]' did not change"
 								level="INFO" doc:name="Email did not change - Do Nothing" />
 							<set-variable variableName="result"
