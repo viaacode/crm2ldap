@@ -26,7 +26,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
-flowVars - "rootMessage" - "jobData" - "jobConfig" - "amqp.channel" mapObject {
+flowVars - "rootMessage" - "jobData" - "jobConfig" - "amqp.channel" - "custom_fields" mapObject {
   '$$': $
   }
 ]]></dw:set-payload>
