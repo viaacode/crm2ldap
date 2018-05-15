@@ -114,7 +114,7 @@ return entryToAdd]]></scripting:script>
         <set-variable variableName="state" value="#['LDAP_ENTRY_UPDATE']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
         <set-variable variableName="result" value="#['Company updated in LDAP']" doc:name="Variable - result"/>
-        <flow-ref name="ldap_organization_remane_dn" doc:name="ldap_organization_remane_dn"/>
+        <flow-ref name="ldap_organization_rename_dn" doc:name="ldap_organization_rename_dn"/>
 
 
     </sub-flow>
@@ -148,7 +148,7 @@ if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 return entryToAdd]]></scripting:script>
         </scripting:component>
     </sub-flow>
-    <sub-flow name="ldap_organization_remane_dn">
+    <sub-flow name="ldap_organization_rename_dn">
         <choice doc:name="Check if DN needs to be renamed">
             <when expression="#[flowVars.update_or_number_in_teamleader == true &amp;&amp; flowVars.event_type == 'company_edited']">
                 <set-variable variableName="ldap_dn_new" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Variable -ldap_dn_new"/>
@@ -222,9 +222,9 @@ return entryToAdd]]></scripting:script>
 
     <sub-flow name="ldap_check_if_company">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'organization' with 'company id'"/>
-        <set-variable variableName="company_excists" value="#[payload.size() == 1]" doc:name="Variable - company_excists"/>
-        <choice doc:name="company_excists">
-            <when expression="#[company_excists == true]">
+        <set-variable variableName="company_exists" value="#[payload.size() == 1]" doc:name="Variable - company_exists"/>
+        <choice doc:name="company_exists">
+            <when expression="#[company_exists == true]">
                 <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
             </when>
             <otherwise>
@@ -234,9 +234,9 @@ return entryToAdd]]></scripting:script>
         <set-variable variableName="state" value="#['LDAP_CHECK_IF_COMPANY_EXISTS']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
     </sub-flow>
-    <sub-flow name="ldap_check_if_contact_excists">
+    <sub-flow name="ldap_check_if_contact_exists">
         <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'inetOrgPerson' with 'x-be-viaa-externalId'" scope="SUB_TREE"/>
-        <set-variable variableName="ldap_contact_excists" value="#[payload.size() &gt;= 1]" doc:name="Variable - ldap_contact_excists"/>
+        <set-variable variableName="ldap_contact_exists" value="#[payload.size() &gt;= 1]" doc:name="Variable - ldap_contact_exists"/>
         <set-variable variableName="ldap_contacts" value="#[payload]" doc:name="Variable - ldap_contacts"/>
         <set-variable variableName="state" value="#['LDAP_CHECK_IF_CONTACT_EXISTS']" doc:name="Variable - state"/>
         <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
@@ -246,16 +246,16 @@ return entryToAdd]]></scripting:script>
         <choice doc:name="Check OR Number">
             <when expression="#[flowVars.or_number == null]">
                 <logger level="INFO" doc:name="is Empty - Do Nothing"/>
-                <set-variable variableName="ldap_entry_excists" value="false" doc:name="Variable - ldap_entry_excists = false"/>
+                <set-variable variableName="ldap_entry_exists" value="false" doc:name="Variable - ldap_entry_exists = false"/>
             </when>
             <otherwise>
                 <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(o=#[flowVars.or_number])(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Has value - LDAP - Search for 'organization' with 'or number' and 'company id'"/>
-                <choice doc:name="Choice - LDAP Entry Excists?">
+                <choice doc:name="Choice - LDAP Entry Exists?">
                     <when expression="#[payload.size() == 0]">
-                        <set-variable variableName="ldap_entry_excists" value="false" doc:name="Variable - ldap_entry_excists = false"/>
+                        <set-variable variableName="ldap_entry_exists" value="false" doc:name="Variable - ldap_entry_exists = false"/>
                     </when>
                     <otherwise>
-                        <set-variable variableName="ldap_entry_excists" value="true" doc:name="Variable - ldap_entry_excists = true"/>
+                        <set-variable variableName="ldap_entry_exists" value="true" doc:name="Variable - ldap_entry_exists = true"/>
                         <set-variable variableName="ldap_entry_string" value="#[payload[0].toString()]" doc:name="Variable - ldap_entry_string"/>
                     </otherwise>
                 </choice>
@@ -462,7 +462,7 @@ return entryToAdd]]></scripting:script>
                 <ldap:attribute>givenName</ldap:attribute>
             </ldap:attributes>
         </ldap:lookup>
-    <choice doc:name="Check if LDAP Attrribute givenName excists">
+    <choice doc:name="Check if LDAP Attrribute givenName exists">
             <when expression="#[payload.getAttributes().getAttribute(&quot;givenName&quot;) != null]">
                 <set-variable variableName="ldap_given_name" value="#[payload.getAttributes().getAttribute(&quot;givenName&quot;).getValue()]" doc:name="TRUE - Set ldap_given_name"/>
             </when>

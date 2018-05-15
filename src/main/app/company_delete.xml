@@ -28,10 +28,10 @@ payload]]></dw:set-payload>
 		<flow-ref name="set_variables" doc:name="set_variables" />
 		<flow-ref name="get_company" doc:name="get_company" />
         <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
-		<flow-ref name="ldap_check_if_company" doc:name="Check if Comapny Excists in LDAP" />
+		<flow-ref name="ldap_check_if_company" doc:name="Check if Comapny Exists in LDAP" />
 		<flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list" />
 		<choice doc:name="Check if company not exists or is on skip list">
-			<when expression="#[flowVars.company_skip == true || company_excists == false]">
+			<when expression="#[flowVars.company_skip == true || company_exists == false]">
 				<set-variable variableName="state" value="COMPANY_SKIPPED_OR_NOT_LDAP"
 					doc:name="TRUE : Variable - state - company skipped or not in ldap" />
 				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
