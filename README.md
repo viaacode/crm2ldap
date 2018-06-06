@@ -1,14 +1,18 @@
 # crm2ldap
 
-Integration between LDAP and CRM
+Integration between CRM and LDAP
 
 ## Introduction
 
-TODO: introduction
+This interface tranfers company and contact data from CRM (Teamleader) to LDAP (Apache). Contacts belong to a company (company has one or more related contacts).
 
 ## Overview
 
-TODO: high-level overview (flow-diagram)
+CRM						LDAP		Action
+-----					-----		--------------------
+
+company 	---->		company		create|update|delete
+contact		---->		contact		create|update|delete
 
 ## Company
 
