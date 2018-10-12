@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:ldap="http://www.mulesoft.org/schema/mule/ldap" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ldap http://www.mulesoft.org/schema/mule/ldap/current/mule-ldap.xsd
@@ -14,25 +21,21 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
- <ldap:config
-    	name="LDAP_Configuration"
-    	authDn="${ldap.principal_dn}"
-    	authPassword="${ldap.password}"
-    	authentication="simple"
-    	url="${ldap.url}"
-    	doc:name="LDAP: TLS Configuration"
-    	schemaEnabled="true"
-    	referral="FOLLOW">
-	        <ldap:extended-configuration>
-            <ldap:extended-configuration key="java.naming.ldap.factory.socket">org.mule.module.ldap.security.BypassTrustSSLSocketFactory</ldap:extended-configuration>
+	<ldap:config name="LDAP_Configuration" authDn="${ldap.principal_dn}"
+		authPassword="${ldap.password}" authentication="simple" url="${ldap.url}"
+		doc:name="LDAP: TLS Configuration" schemaEnabled="true" referral="FOLLOW">
+		<ldap:extended-configuration>
+			<ldap:extended-configuration key="java.naming.ldap.factory.socket">org.mule.module.ldap.security.BypassTrustSSLSocketFactory</ldap:extended-configuration>
 
-	        </ldap:extended-configuration>
-        <reconnect/>
-   	</ldap:config>
-    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
-    <sub-flow name="ldap_contact_entry_to_update">
-        <flow-ref name="ldap_contact_get_object_classes" doc:name="ldap_contact_get_object_classes"/><scripting:component doc:name="LDAP Entry">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+		</ldap:extended-configuration>
+		<reconnect />
+	</ldap:config>
+	<http:listener-config name="HTTP_Listener_Configuration"
+		host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration" />
+	<sub-flow name="ldap_contact_entry_to_update">
+		<flow-ref name="ldap_contact_get_object_classes" doc:name="ldap_contact_get_object_classes" />
+		<scripting:component doc:name="LDAP Entry">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String cn;
@@ -59,12 +62,14 @@ entryToUpdate.addAttribute("x-be-viaa-externalId", externalId);
 entryToUpdate.addAttribute("o", o);
 
 return entryToUpdate]]></scripting:script>
-        </scripting:component>
-    </sub-flow>
-    <sub-flow name="ldap_add_organization">
-        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <scripting:component doc:name="Create LDAP Entry">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+		</scripting:component>
+	</sub-flow>
+	<sub-flow name="ldap_add_organization">
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+		<scripting:component doc:name="Create LDAP Entry">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
@@ -81,55 +86,18 @@ entryToAdd.addAttribute("businessCategory", category);
 if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 
 return entryToAdd]]></scripting:script>
-        </scripting:component>
-        <ldap:add config-ref="LDAP_Configuration" doc:name="Add LDAPEntry"/>
-        <set-variable variableName="state" value="#['LDAP_ENTRY_ADD']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-        <set-variable variableName="result" value="#['Company created in LDAP']" doc:name="Variable - result"/>
+		</scripting:component>
+		<ldap:add config-ref="LDAP_Configuration" doc:name="Add LDAPEntry" />
+		<set-variable variableName="state" value="#['LDAP_ENTRY_ADD']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+		<set-variable variableName="result" value="#['Company created in LDAP']"
+			doc:name="Variable - result" />
 
-    </sub-flow>
-    <sub-flow name="ldap_update_organization">
-        <scripting:component doc:name="Create LDAP Entry">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
-
-String dn = flowVars.ldap_dn;
-String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
-String object_id = flowVars.object_id;
-String category = flowVars.ldap_business_category;
-String sector = flowVars.ldap_sector;
-
-LDAPEntry entryToAdd = new LDAPEntry(dn);
-
-entryToAdd.addAttribute("objectClass", ["organization","x-be-viaa-organization"]);
-entryToAdd.addAttribute("description", description);
-entryToAdd.addAttribute("x-be-viaa-externalId", object_id);
-entryToAdd.addAttribute("businessCategory", category);
-if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
-
-return entryToAdd]]></scripting:script>
-        </scripting:component>
-
-
-        <ldap:modify config-ref="LDAP_Configuration" doc:name="Modify LDAPEntry"/>
-        <set-variable variableName="state" value="#['LDAP_ENTRY_UPDATE']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-        <set-variable variableName="result" value="#['Company updated in LDAP']" doc:name="Variable - result"/>
-        <flow-ref name="ldap_organization_rename_dn" doc:name="ldap_organization_rename_dn"/>
-
-
-    </sub-flow>
-    <sub-flow name="ldap_delete_organization">
-        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-
-        <ldap:delete config-ref="LDAP_Configuration" doc:name="Delete LDAPEntry" dn="#[flowVars.ldap_dn]"/>
-        <set-variable variableName="state" value="#['LDAP_ENTRY_DELETE']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-        <set-variable variableName="result" value="#['Company deleted in LDAP']" doc:name="Variable - result"/>
-    </sub-flow>
-    <sub-flow name="ldap_prepare_call_organization">
-        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <scripting:component doc:name="Create LDAP Entry">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+	</sub-flow>
+	<sub-flow name="ldap_update_organization">
+		<scripting:component doc:name="Create LDAP Entry">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
@@ -146,27 +114,38 @@ entryToAdd.addAttribute("businessCategory", category);
 if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 
 return entryToAdd]]></scripting:script>
-        </scripting:component>
-    </sub-flow>
-    <sub-flow name="ldap_organization_rename_dn">
-        <choice doc:name="Check if DN needs to be renamed">
-            <when expression="#[flowVars.update_or_number_in_teamleader == true &amp;&amp; flowVars.event_type == 'company_edited']">
-                <set-variable variableName="ldap_dn_new" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Variable -ldap_dn_new"/>
-                <logger message="Renaming Company DN from #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]" level="INFO" doc:name="Renaming DN"/>
-                <ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]" newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN"/>
-                <set-variable variableName="state" value="RENAME_COMPANY_DN" doc:name="Variable - state"/>
-                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-                <set-variable variableName="result" value="Company has nee updated and DN has beed renamed to #[flowVars.ldap_dn_new]" doc:name="Variable - result"/>
-            </when>
-            <otherwise>
-                <logger message="No DN rename needed" level="INFO" doc:name="No DN rename needed"/>
-            </otherwise>
-        </choice>
-    </sub-flow>
-    <sub-flow name="ldap_prepare_call_contacts">
-        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <scripting:component doc:name="Create LDAP Entry">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+		</scripting:component>
+
+
+		<ldap:modify config-ref="LDAP_Configuration" doc:name="Modify LDAPEntry" />
+		<set-variable variableName="state" value="#['LDAP_ENTRY_UPDATE']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+		<set-variable variableName="result" value="#['Company updated in LDAP']"
+			doc:name="Variable - result" />
+		<flow-ref name="ldap_organization_rename_dn" doc:name="ldap_organization_rename_dn" />
+
+
+	</sub-flow>
+	<sub-flow name="ldap_delete_organization">
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+
+		<ldap:delete config-ref="LDAP_Configuration" doc:name="Delete LDAPEntry"
+			dn="#[flowVars.ldap_dn]" />
+		<set-variable variableName="state" value="#['LDAP_ENTRY_DELETE']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+		<set-variable variableName="result" value="#['Company deleted in LDAP']"
+			doc:name="Variable - result" />
+	</sub-flow>
+	<sub-flow name="ldap_prepare_call_organization">
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+		<scripting:component doc:name="Create LDAP Entry">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
@@ -183,151 +162,246 @@ entryToAdd.addAttribute("businessCategory", category);
 if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
 
 return entryToAdd]]></scripting:script>
-        </scripting:component>
-    </sub-flow>
-    <sub-flow name="contact_get_entry_uuid">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.contact_id])(o=#[flowVars.or_number]))" scope="SUB_TREE" doc:name="Get UUID">
-            <ldap:attributes>
-                <ldap:attribute>entryUUID</ldap:attribute>
-            </ldap:attributes>
-        </ldap:search>
-        <set-variable variableName="ldap_entry_uuid" value="#[(payload[0].getAttributes()).getAttribute(&quot;entryUUID&quot;).value]" doc:name="Variable - ldap_entry_uuid"/>
-    </sub-flow>
-    <sub-flow name="contact_get_by_uuid">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(entryUUID=#[flowVars.contact_uuid]))" scope="SUB_TREE" doc:name="Get By UUID">
-            <ldap:attributes/>
-        </ldap:search>
-        <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
-        <set-variable variableName="contact_id" value="#[(payload[0].getAttributes()).getAttribute(&quot;x-be-viaa-externalId&quot;).value]" doc:name="Variable - contact_id"/>
-        <set-variable variableName="state" value="GET_CONTACT_WITH_UUID" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
-    <sub-flow name="ldap_get_all_contacts_for_company">
-        <set-variable variableName="ldap_dn" value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <ldap:search config-ref="LDAP_Configuration" baseDn="#[flowVars.ldap_dn]" filter="(&amp;(objectClass=inetOrgPerson)(!(employeeType=Technical User)))" doc:name="get LDAP Contacts for Company" scope="SUB_TREE">
-            <ldap:attributes>
-                <ldap:attribute>mail</ldap:attribute>
-                <ldap:attribute>o</ldap:attribute>
-                <ldap:attribute>entryUUID</ldap:attribute>
-                <ldap:attribute>cn</ldap:attribute>
-                <ldap:attribute>sn</ldap:attribute>
-                <ldap:attribute>x-be-viaa-externalId</ldap:attribute>
-            </ldap:attributes>
-        </ldap:search>
-        <set-variable variableName="ldap_contacts" value="#[payload]" doc:name="Variable - ldap_contacts"/>
-        <set-variable variableName="state" value="GET_LDAP_CONTACTS_FOR_COMPANY" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+		</scripting:component>
+	</sub-flow>
+	<sub-flow name="ldap_organization_rename_dn">
+		<choice doc:name="Check if DN needs to be renamed">
+			<when
+				expression="#[flowVars.update_or_number_in_teamleader == true &amp;&amp; flowVars.event_type == 'company_edited']">
+				<set-variable variableName="ldap_dn_new"
+					value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+					doc:name="Variable -ldap_dn_new" />
+				<logger
+					message="Renaming Company DN from #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]"
+					level="INFO" doc:name="Renaming DN" />
+				<ldap:rename config-ref="LDAP_Configuration" oldDn="#[flowVars.ldap_dn]"
+					newDn="#[flowVars.ldap_dn_new]" doc:name="LDAP - Rename DN" />
+				<set-variable variableName="state" value="RENAME_COMPANY_DN"
+					doc:name="Variable - state" />
+				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+				<set-variable variableName="result"
+					value="Company has nee updated and DN has beed renamed to #[flowVars.ldap_dn_new]"
+					doc:name="Variable - result" />
+			</when>
+			<otherwise>
+				<logger message="No DN rename needed" level="INFO"
+					doc:name="No DN rename needed" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="ldap_prepare_call_contacts">
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+		<scripting:component doc:name="Create LDAP Entry">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
-    </sub-flow>
+String dn = flowVars.ldap_dn;
+String description = (message.getProperty("company",org.mule.api.transport.PropertyScope.INVOCATION))['name'];
+String object_id = flowVars.object_id;
+String category = flowVars.ldap_business_category;
+String sector = flowVars.ldap_sector;
 
-    <sub-flow name="ldap_check_if_company">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'organization' with 'company id'"/>
-        <set-variable variableName="company_exists" value="#[payload.size() == 1]" doc:name="Variable - company_exists"/>
-        <choice doc:name="company_exists">
-            <when expression="#[company_exists == true]">
-                <set-variable variableName="ldap_dn" value="#[payload[0].getDn()]" doc:name="Variable - ldap_dn"/>
-            </when>
-            <otherwise>
-                <logger message="Company (&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id])) does not excist in LDAP" level="INFO" doc:name="FALSE - Do Nothing"/>
-            </otherwise>
-        </choice>
-        <set-variable variableName="state" value="#['LDAP_CHECK_IF_COMPANY_EXISTS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
-    <sub-flow name="ldap_check_if_contact_exists">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Search for 'inetOrgPerson' with 'x-be-viaa-externalId'" scope="SUB_TREE"/>
-        <set-variable variableName="ldap_contact_exists" value="#[payload.size() &gt;= 1]" doc:name="Variable - ldap_contact_exists"/>
-        <set-variable variableName="ldap_contacts" value="#[payload]" doc:name="Variable - ldap_contacts"/>
-        <set-variable variableName="state" value="#['LDAP_CHECK_IF_CONTACT_EXISTS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
+LDAPEntry entryToAdd = new LDAPEntry(dn);
 
-    <sub-flow name="ldap_check_if_or_number_and_company">
-        <choice doc:name="Check OR Number">
-            <when expression="#[flowVars.or_number == null]">
-                <logger level="INFO" doc:name="is Empty - Do Nothing"/>
-                <set-variable variableName="ldap_entry_exists" value="false" doc:name="Variable - ldap_entry_exists = false"/>
-            </when>
-            <otherwise>
-                <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=organization)(o=#[flowVars.or_number])(x-be-viaa-externalId=#[flowVars.object_id]))" doc:name="Has value - LDAP - Search for 'organization' with 'or number' and 'company id'"/>
-                <choice doc:name="Choice - LDAP Entry Exists?">
-                    <when expression="#[payload.size() == 0]">
-                        <set-variable variableName="ldap_entry_exists" value="false" doc:name="Variable - ldap_entry_exists = false"/>
-                    </when>
-                    <otherwise>
-                        <set-variable variableName="ldap_entry_exists" value="true" doc:name="Variable - ldap_entry_exists = true"/>
-                        <set-variable variableName="ldap_entry_string" value="#[payload[0].toString()]" doc:name="Variable - ldap_entry_string"/>
-                    </otherwise>
-                </choice>
-            </otherwise>
-        </choice>
+entryToAdd.addAttribute("objectClass", ["organization","x-be-viaa-organization"]);
+entryToAdd.addAttribute("description", description);
+entryToAdd.addAttribute("x-be-viaa-externalId", object_id);
+entryToAdd.addAttribute("businessCategory", category);
+if (sector != null) {entryToAdd.addAttribute("x-be-viaa-sector", sector)};
+
+return entryToAdd]]></scripting:script>
+		</scripting:component>
+	</sub-flow>
+	<sub-flow name="contact_get_entry_uuid">
+		<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+			filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.contact_id])(o=#[flowVars.or_number]))"
+			scope="SUB_TREE" doc:name="Get UUID">
+			<ldap:attributes>
+				<ldap:attribute>entryUUID</ldap:attribute>
+			</ldap:attributes>
+		</ldap:search>
+		<set-variable variableName="ldap_entry_uuid"
+			value="#[(payload[0].getAttributes()).getAttribute(&quot;entryUUID&quot;).value]"
+			doc:name="Variable - ldap_entry_uuid" />
+	</sub-flow>
+	<sub-flow name="contact_get_by_uuid">
+		<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+			filter="(&amp;(objectClass=inetOrgPerson)(entryUUID=#[flowVars.contact_uuid]))"
+			scope="SUB_TREE" doc:name="Get By UUID">
+			<ldap:attributes />
+		</ldap:search>
+		<set-variable variableName="ldap_dn" value="#[payload[0].getDn()]"
+			doc:name="Variable - ldap_dn" />
+		<set-variable variableName="contact_id"
+			value="#[(payload[0].getAttributes()).getAttribute(&quot;x-be-viaa-externalId&quot;).value]"
+			doc:name="Variable - contact_id" />
+		<set-variable variableName="state" value="GET_CONTACT_WITH_UUID"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
+	<sub-flow name="ldap_get_all_contacts_for_company">
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+		<ldap:search config-ref="LDAP_Configuration" baseDn="#[flowVars.ldap_dn]"
+			filter="(&amp;(objectClass=inetOrgPerson)(!(employeeType=Technical User)))"
+			doc:name="get LDAP Contacts for Company" scope="SUB_TREE">
+			<ldap:attributes>
+				<ldap:attribute>mail</ldap:attribute>
+				<ldap:attribute>o</ldap:attribute>
+				<ldap:attribute>entryUUID</ldap:attribute>
+				<ldap:attribute>cn</ldap:attribute>
+				<ldap:attribute>sn</ldap:attribute>
+				<ldap:attribute>x-be-viaa-externalId</ldap:attribute>
+			</ldap:attributes>
+		</ldap:search>
+		<set-variable variableName="ldap_contacts" value="#[payload]"
+			doc:name="Variable - ldap_contacts" />
+		<set-variable variableName="state"
+			value="GET_LDAP_CONTACTS_FOR_COMPANY" doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+
+	</sub-flow>
+
+	<sub-flow name="ldap_check_if_company">
+		<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+			filter="(&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id]))"
+			doc:name="Search for 'organization' with 'company id'" />
+		<set-variable variableName="company_exists" value="#[payload.size() == 1]"
+			doc:name="Variable - company_exists" />
+		<choice doc:name="company_exists">
+			<when expression="#[company_exists == true]">
+				<set-variable variableName="ldap_dn" value="#[payload[0].getDn()]"
+					doc:name="Variable - ldap_dn" />
+			</when>
+			<otherwise>
+				<logger
+					message="Company (&amp;(objectClass=organization)(x-be-viaa-externalId=#[flowVars.object_id])) does not excist in LDAP"
+					level="INFO" doc:name="FALSE - Do Nothing" />
+			</otherwise>
+		</choice>
+		<set-variable variableName="state"
+			value="#['LDAP_CHECK_IF_COMPANY_EXISTS']" doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
+	<sub-flow name="ldap_check_if_contact_exists">
+		<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+			filter="(&amp;(objectClass=inetOrgPerson)(x-be-viaa-externalId=#[flowVars.object_id]))"
+			doc:name="Search for 'inetOrgPerson' with 'x-be-viaa-externalId'"
+			scope="SUB_TREE" />
+		<set-variable variableName="ldap_contact_exists" value="#[payload.size() &gt;= 1]"
+			doc:name="Variable - ldap_contact_exists" />
+		<set-variable variableName="ldap_contacts" value="#[payload]"
+			doc:name="Variable - ldap_contacts" />
+		<set-variable variableName="state"
+			value="#['LDAP_CHECK_IF_CONTACT_EXISTS']" doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
+
+	<sub-flow name="ldap_check_if_or_number_and_company">
+		<choice doc:name="Check OR Number">
+			<when expression="#[flowVars.or_number == null]">
+				<logger level="INFO" doc:name="is Empty - Do Nothing" />
+				<set-variable variableName="ldap_entry_exists" value="false"
+					doc:name="Variable - ldap_entry_exists = false" />
+			</when>
+			<otherwise>
+				<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+					filter="(&amp;(objectClass=organization)(o=#[flowVars.or_number])(x-be-viaa-externalId=#[flowVars.object_id]))"
+					doc:name="Has value - LDAP - Search for 'organization' with 'or number' and 'company id'" />
+				<choice doc:name="Choice - LDAP Entry Exists?">
+					<when expression="#[payload.size() == 0]">
+						<set-variable variableName="ldap_entry_exists" value="false"
+							doc:name="Variable - ldap_entry_exists = false" />
+					</when>
+					<otherwise>
+						<set-variable variableName="ldap_entry_exists" value="true"
+							doc:name="Variable - ldap_entry_exists = true" />
+						<set-variable variableName="ldap_entry_string" value="#[payload[0].toString()]"
+							doc:name="Variable - ldap_entry_string" />
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
 
 
 
-    </sub-flow>
-    <sub-flow name="ldap_contact">
-        <choice doc:name="LDAP Contact Actions ?">
-            <when expression="#[flowVars.ldap_contact_actions.isEmpty() == true]">
-                <logger level="INFO" doc:name="True- Do Nothing"/>
-            </when>
-            <otherwise>
-                <set-payload doc:name="Set Payload" value="#[flowVars.ldap_contact_actions.entrySet()]"/>
-                <foreach doc:name="For Each - LDAP Action">
-                    <set-variable variableName="contact_id" value="#[payload.key]" doc:name="Variable - contact_id"/>
-                    <set-variable variableName="ldap_action" value="#[payload.value]" doc:name="Variable - ldap_action"/>
-                    <flow-ref name="get_contact" doc:name="get_contact"/>
-                    <choice doc:name="LDAP Action">
-                        <when expression="#[flowVars.ldap_action == &quot;create&quot;]">
-                            <flow-ref name="ldap_contact_add" doc:name="ldap_contact_add"/>
-                        </when>
-                        <when expression="#[flowVars.ldap_action == &quot;update&quot;]">
-                            <flow-ref name="ldap_contact_update" doc:name="ldap_contact_update"/>
-                        </when>
-                        <when expression="#[flowVars.ldap_action == &quot;delete&quot;]">
-                            <flow-ref name="ldap_contact_delete_ticket" doc:name="ldap_contact_delete_ticket"/>
-                        </when>
-                        <otherwise>
-                            <scripting:component doc:name="Throw Error">
-                                <scripting:script engine="Groovy"><![CDATA[throw new IllegalArgumentException('Illegal value of LDAP Action variable')]]></scripting:script>
-                            </scripting:component>
-                        </otherwise>
-                    </choice>
-                    <set-variable variableName="state" value="LDAP_ACTION" doc:name="Variable - state"/>
-                    <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-                </foreach>
-            </otherwise>
-        </choice>
-        <set-variable variableName="state" value="LDAP_ACTIONS_COMPLETED" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
-    <sub-flow name="ldap_contact_add">
+	</sub-flow>
+	<sub-flow name="ldap_contact">
+		<choice doc:name="LDAP Contact Actions ?">
+			<when expression="#[flowVars.ldap_contact_actions.isEmpty() == true]">
+				<logger level="INFO" doc:name="True- Do Nothing" />
+			</when>
+			<otherwise>
+				<set-payload doc:name="Set Payload"
+					value="#[flowVars.ldap_contact_actions.entrySet()]" />
+				<foreach doc:name="For Each - LDAP Action">
+					<set-variable variableName="contact_id" value="#[payload.key]"
+						doc:name="Variable - contact_id" />
+					<set-variable variableName="ldap_action" value="#[payload.value]"
+						doc:name="Variable - ldap_action" />
+					<flow-ref name="get_contact" doc:name="get_contact" />
+					<choice doc:name="LDAP Action">
+						<when expression="#[flowVars.ldap_action == &quot;create&quot;]">
+							<flow-ref name="ldap_contact_add" doc:name="ldap_contact_add" />
+						</when>
+						<when expression="#[flowVars.ldap_action == &quot;update&quot;]">
+							<flow-ref name="ldap_contact_update" doc:name="ldap_contact_update" />
+						</when>
+						<when expression="#[flowVars.ldap_action == &quot;delete&quot;]">
+							<flow-ref name="ldap_contact_delete_ticket" doc:name="ldap_contact_delete_ticket" />
+						</when>
+						<otherwise>
+							<scripting:component doc:name="Throw Error">
+								<scripting:script engine="Groovy"><![CDATA[throw new IllegalArgumentException('Illegal value of LDAP Action variable')]]></scripting:script>
+							</scripting:component>
+						</otherwise>
+					</choice>
+					<set-variable variableName="state" value="LDAP_ACTION"
+						doc:name="Variable - state" />
+					<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+				</foreach>
+			</otherwise>
+		</choice>
+		<set-variable variableName="state" value="LDAP_ACTIONS_COMPLETED"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
+	<sub-flow name="ldap_contact_add">
 
-        <flow-ref name="ldap_contact_action_prepare" doc:name="ldap_contact_action_prepare"/>
-        <ldap:add config-ref="LDAP_Configuration" doc:name="LDAP Add Entry"/>
-        <flow-ref name="contact_get_entry_uuid" doc:name="contact_get_entry_uuid"/>
-        <flow-ref name="contact_set_uuid" doc:name="contact_set_uuid"/>
-        <flow-ref name="ldap_contact_check_mail" doc:name="ldap_contact_check_mail"/>
+		<flow-ref name="ldap_contact_action_prepare" doc:name="ldap_contact_action_prepare" />
+		<ldap:add config-ref="LDAP_Configuration" doc:name="LDAP Add Entry" />
+		<flow-ref name="contact_get_entry_uuid" doc:name="contact_get_entry_uuid" />
+		<flow-ref name="contact_set_uuid" doc:name="contact_set_uuid" />
+		<flow-ref name="ldap_contact_check_mail" doc:name="ldap_contact_check_mail" />
 
 
-    </sub-flow>
-    <sub-flow name="ldap_contact_update">
-        <flow-ref name="ldap_contact_action_prepare_update" doc:name="ldap_contact_action_prepare_update"/>
-        <ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify Entry"/>
-        <choice doc:name="If CRM contact forname is empty and ldap givenName exists">
-            <when expression="#[(flowVars.contact.forename == null || flowVars.contact.forename == &quot;&quot;) &amp;&amp; flowVars.ldap_given_name != null]">
-                <logger message="Going to delete attribute givenName #[flowVars.ldap_given_name] from  #[flowVars.ldap_dn]" level="INFO" doc:name="Logger"/>
-                <ldap:delete-single-value-attribute config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" attributeName="givenName" attributeValue="#[flowVars.ldap_given_name]" doc:name="TRUE - LDAP Delete Attribute givenName"/>
-            </when>
-            <otherwise>
-                <logger message="Dummy - Do Nothing" level="INFO" doc:name="Do Nothing"/>
-            </otherwise>
-        </choice>
-        <flow-ref name="ldap_contact_check_mail" doc:name="ldap_contact_check_mail"/>
+	</sub-flow>
+	<sub-flow name="ldap_contact_update">
+		<flow-ref name="ldap_contact_action_prepare_update" doc:name="ldap_contact_action_prepare_update" />
+		<ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify Entry" />
+		<choice doc:name="If CRM contact forname is empty and ldap givenName exists">
+			<when
+				expression="#[(flowVars.contact.forename == null || flowVars.contact.forename == &quot;&quot;) &amp;&amp; flowVars.ldap_given_name != null]">
+				<logger
+					message="Going to delete attribute givenName #[flowVars.ldap_given_name] from  #[flowVars.ldap_dn]"
+					level="INFO" doc:name="Logger" />
+				<ldap:delete-single-value-attribute
+					config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]"
+					attributeName="givenName" attributeValue="#[flowVars.ldap_given_name]"
+					doc:name="TRUE - LDAP Delete Attribute givenName" />
+			</when>
+			<otherwise>
+				<logger message="Dummy - Do Nothing" level="INFO" doc:name="Do Nothing" />
+			</otherwise>
+		</choice>
+		<flow-ref name="ldap_contact_check_mail" doc:name="ldap_contact_check_mail" />
 
-    </sub-flow>
-    <sub-flow name="ldap_contact_delete_ticket">
-        <dw:transform-message doc:name="get uuid value from contact user id">
-            <dw:set-payload><![CDATA[%dw 1.0
+	</sub-flow>
+	<sub-flow name="ldap_contact_delete_ticket">
+		<dw:transform-message doc:name="get uuid value from contact user id">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 {
@@ -337,27 +411,39 @@ return entryToAdd]]></scripting:script>
             }
        )
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <set-variable variableName="uuid" value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid"/>
-        <set-variable variableName="href_link" value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']" doc:name="Variable - href_link"/>
-        <set-variable variableName="ticket_body" value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname + ' met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP.' + &quot;\n\n&quot; + 'Moet dit contact ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]" doc:name="Variable - ticket_body"/>
-        <choice doc:name="Choice - environment">
-            <when expression="#[flowVars.environment == 'production']">
-                <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld" doc:name="Variable - ticket_subject"/>
-            </when>
-            <otherwise>
-                <set-variable variableName="ticket_subject" value="Teamleader: een contact werd verwijderd/ontkoppeld (TEST)" doc:name="Variable - ticket_subject TEST"/>
-            </otherwise>
-        </choice>
-        <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
-        <logger message="After create_zendesk_ticket - #[flowVars.create_zendesk_ticket]" level="WARN" doc:name="Logger"/>
-    </sub-flow>
-    <sub-flow name="ldap_contact_delete">
+		</dw:transform-message>
+		<set-variable variableName="uuid"
+			value="#[(payload[&quot;uuid&quot;])[0]]" doc:name="Variable - uuid" />
+		<set-variable variableName="href_link"
+			value="#['[Link om Contact Definitief te verwijderen]'+ '(' + dw(&quot;p('viaa.loadbalancer')&quot;) + &quot;/ldap/contact/delete?id=&quot; + flowVars.uuid + &quot;&amp;jwtauth=&quot; + dw(&quot;p('webhook_access_token')&quot;) + ')']"
+			doc:name="Variable - href_link" />
+		<set-variable variableName="ticket_body"
+			value="#[flowVars.contact.forename + ' ' + flowVars.contact.surname + ' met Teamleader ID ' + flowVars.contact.id + ' en LDAP ID ' + flowVars.uuid + ' werd verwijderd/ontkoppeld in Teamleader. Dit contact heeft een account in LDAP.' + &quot;\n\n&quot; + 'Moet dit contact ook in LDAP verwijderd worden? Opgelet deze actie is &#233;&#233;nmalig en kan niet ongedaan gemaakt worden.' + &quot;\n\n- &quot; + flowVars.href_link]"
+			doc:name="Variable - ticket_body" />
+		<choice doc:name="Choice - environment">
+			<when expression="#[flowVars.environment == 'production']">
+				<set-variable variableName="ticket_subject"
+					value="Teamleader: een contact werd verwijderd/ontkoppeld"
+					doc:name="Variable - ticket_subject" />
+			</when>
+			<otherwise>
+				<set-variable variableName="ticket_subject"
+					value="Teamleader: een contact werd verwijderd/ontkoppeld (TEST)"
+					doc:name="Variable - ticket_subject TEST" />
+			</otherwise>
+		</choice>
+		<flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket" />
+		<logger
+			message="After create_zendesk_ticket - #[flowVars.create_zendesk_ticket]"
+			level="WARN" doc:name="Logger" />
+	</sub-flow>
+	<sub-flow name="ldap_contact_delete">
 
-        <ldap:delete config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Delete Entry"/>
-        <flow-ref name="get_contact" doc:name="get_contact"/>
-        <dw:transform-message doc:name="get uuid value from contact user id">
-            <dw:set-payload><![CDATA[%dw 1.0
+		<ldap:delete config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]"
+			doc:name="LDAP Delete Entry" />
+		<flow-ref name="get_contact" doc:name="get_contact" />
+		<dw:transform-message doc:name="get uuid value from contact user id">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 {
@@ -367,32 +453,43 @@ return entryToAdd]]></scripting:script>
             }
        )
 }]]></dw:set-payload>
-        </dw:transform-message>
-        <set-variable variableName="crm_uuid" value="#[payload[&quot;uuid&quot;] == null ? null : (payload[&quot;uuid&quot;])[0]]" doc:name="Variable - crm_uuid"/>
-        <choice doc:name="compare crm and ldap uuid">
-            <when expression="#[flowVars.crm_uuid != flowVars.contact_uuid]">
-                <set-variable variableName="result" value="#['UUIDs in LDAP and CRM are not the same no need to clear the CRM UUID']" doc:name="Variable - result"/>
-                <logger level="INFO" doc:name="Not the same - do nothing" message="UUIDs in LDAP and CRM are not the same. No need to clear the CRM UUID"/>
-            </when>
-            <otherwise>
-                <set-variable variableName="ldap_entry_uuid" value="#['']" doc:name="Variable - ldap_entry_uuid to blank"/>
-                <flow-ref name="contact_set_uuid" doc:name="contact_set_uuid"/>
-                <set-variable variableName="state" value="CONTACT_UUID_CLEARED" doc:name="state"/>
-                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-                <flow-ref name="contact_clear_roles" doc:name="contact_clear_roles"/>
-                <set-variable variableName="state" value="CONTACT_ROLES_CLEARED" doc:name="state"/>
-                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-                <set-variable variableName="result" value="#['UUID and Roles are cleared in CRM']" doc:name="Variable - result"/>
-            </otherwise>
-        </choice>
+		</dw:transform-message>
+		<set-variable variableName="crm_uuid"
+			value="#[payload[&quot;uuid&quot;] == null ? null : (payload[&quot;uuid&quot;])[0]]"
+			doc:name="Variable - crm_uuid" />
+		<choice doc:name="compare crm and ldap uuid">
+			<when expression="#[flowVars.crm_uuid != flowVars.contact_uuid]">
+				<set-variable variableName="result"
+					value="#['UUIDs in LDAP and CRM are not the same no need to clear the CRM UUID']"
+					doc:name="Variable - result" />
+				<logger level="INFO" doc:name="Not the same - do nothing"
+					message="UUIDs in LDAP and CRM are not the same. No need to clear the CRM UUID" />
+			</when>
+			<otherwise>
+				<set-variable variableName="ldap_entry_uuid" value="#['']"
+					doc:name="Variable - ldap_entry_uuid to blank" />
+				<flow-ref name="contact_set_uuid" doc:name="contact_set_uuid" />
+				<set-variable variableName="state" value="CONTACT_UUID_CLEARED"
+					doc:name="state" />
+				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+				<flow-ref name="contact_clear_roles" doc:name="contact_clear_roles" />
+				<set-variable variableName="state" value="CONTACT_ROLES_CLEARED"
+					doc:name="state" />
+				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+				<set-variable variableName="result"
+					value="#['UUID and Roles are cleared in CRM']" doc:name="Variable - result" />
+			</otherwise>
+		</choice>
 
-    </sub-flow>
-    <sub-flow name="ldap_contact_action_prepare">
-        <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
-        <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
+	</sub-flow>
+	<sub-flow name="ldap_contact_action_prepare">
+		<flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields" />
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
 
-        <scripting:component doc:name="LDAP Entry to Add">
-            <scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
+		<scripting:component doc:name="LDAP Entry to Add">
+			<scripting:script engine="Groovy"><![CDATA[import org.mule.module.ldap.api.LDAPEntry;
 
 String dn = flowVars.ldap_dn;
 String cn;
@@ -417,61 +514,92 @@ entryToAdd.addAttribute("x-be-viaa-externalId", externalId);
 entryToAdd.addAttribute("o", o);
 
 return entryToAdd]]></scripting:script>
-        </scripting:component>
-        <set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]" doc:name="Set ldap_entry_as_string"/>
-        <logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]" level="INFO" doc:name="Logger - ldap_entry_as_string"/>
-    </sub-flow>
-     <sub-flow name="ldap_contact_action_prepare_update">
-        <flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields"/>
-        <set-variable variableName="ldap_dn" value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}" doc:name="Set ldap_dn"/>
-        <flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update"/>
-        <set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]" doc:name="Set ldap_entry_as_string"/>
-        <logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]" level="INFO" doc:name="Logger - ldap_entry_as_string"/>
-    </sub-flow>
-    <sub-flow name="ldap_contact_check_mail">
-        <ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}" filter="(&amp;(objectClass=inetOrgPerson)(mail=#[flowVars.contact.email]))" doc:name="LDAP - Search for contacts with email" scope="SUB_TREE"/>
-        <choice doc:name="Email occurs multiple times in LDAP?">
-            <when expression="#[payload.size() &gt; 1]">
-                <logger message="MULTIPLE EMAIL CHECK : email #[flowVars.contact.email] occurs #[payload.size()] times in LDAP. Make Zendesk Ticket." level="INFO" doc:name="True - Make Zendesk Ticket."/>
-                <set-variable variableName="ticket_body" value="#['- E-mailadres ' + flowVars.contact.email + ' komt ' + payload.size() + ' keer voor in LDAP. Een e-mailadres mag maar &#233;&#233;n keer gebruikt worden in LDAP. Gelieve na te kijken en de e-mailadressen te wijzigen.']" doc:name="ticket_body"/>
-                      <choice doc:name="Choice - environment">
-            <when expression="#[flowVars.environment == 'production']">
-                <set-variable variableName="ticket_subject" value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP']" doc:name="Set ticket_subject for Production"/>
-            </when>
-            <otherwise>
-                <set-variable variableName="ticket_subject" value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP (TEST)']" doc:name="Set ticket_subject Test"/>
-            </otherwise>
-        </choice>
-        <logger message="Going to create a Zendesk ticket to inform about multiple email adresses in ldap for : #[flowVars.contact.email]" level="INFO" doc:name="Logger"/>
-        <flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket"/>
-            </when>
-            <otherwise>
-                <logger message="MULTIPLE EMAIL CHECK : email #[flowVars.contact.email] occurs #[payload.size()] times in LDAP. Do Nothing" level="INFO" doc:name="False - Do Nothing"/>
-            </otherwise>
-        </choice>
-    </sub-flow>
-  <sub-flow name="ldap_contact_get_object_classes" >
-        <ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Lookup Entry - objectClasses">
-            <ldap:attributes>
-                <ldap:attribute>objectClass</ldap:attribute>
-            </ldap:attributes>
-        </ldap:lookup>
-        <set-variable variableName="object_class" value="#[message.payload.getAttributes().attributes().next().getValues()]" doc:name="Variable - object_class"/>
-        <ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]" doc:name="LDAP Lookup givenName">
-            <ldap:attributes>
-                <ldap:attribute>givenName</ldap:attribute>
-            </ldap:attributes>
-        </ldap:lookup>
-    <choice doc:name="Check if LDAP Attrribute givenName exists">
-            <when expression="#[payload.getAttributes().getAttribute(&quot;givenName&quot;) != null]">
-                <set-variable variableName="ldap_given_name" value="#[payload.getAttributes().getAttribute(&quot;givenName&quot;).getValue()]" doc:name="TRUE - Set ldap_given_name"/>
-            </when>
-            <otherwise>
-                <remove-variable variableName="ldap_given_name" doc:name="Delete flowVars.ldap_given_name"/>
-            </otherwise>
-        </choice>
-    </sub-flow>
-    <sub-flow name="ldap_contact_check_externalId">
-        <validation:is-false message="Only Technical Users may have an empty external id" expression="#[payload.getAttributes().getAttribute(&quot;employeeType&quot;) != 'Technical User' &amp;&amp; payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;) == null]" doc:name="Only Technical Users may have an empty external id"/>
-    </sub-flow>
+		</scripting:component>
+		<set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]"
+			doc:name="Set ldap_entry_as_string" />
+		<logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]"
+			level="INFO" doc:name="Logger - ldap_entry_as_string" />
+	</sub-flow>
+	<sub-flow name="ldap_contact_action_prepare_update">
+		<flow-ref name="contact_check_required_fields" doc:name="contact_check_required_fields" />
+		<set-variable variableName="ldap_dn"
+			value="#[&quot;mail=&quot; + flowVars.contact.email + &quot;,o=&quot; + flowVars.or_number + &quot;,&quot;]${ldap.base_dn}"
+			doc:name="Set ldap_dn" />
+		<flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update" />
+		<set-variable variableName="ldap_entry_as_string" value="#[payload.toLDIFString()]"
+			doc:name="Set ldap_entry_as_string" />
+		<logger message="ldap_entry_as_string =  #[flowVars.ldap_entry_as_string]"
+			level="INFO" doc:name="Logger - ldap_entry_as_string" />
+	</sub-flow>
+	<sub-flow name="ldap_contact_check_mail">
+		<ldap:search config-ref="LDAP_Configuration" baseDn="${ldap.base_dn}"
+			filter="(&amp;(objectClass=inetOrgPerson)(mail=#[flowVars.contact.email]))"
+			doc:name="LDAP - Search for contacts with email" scope="SUB_TREE" />
+		<choice doc:name="Email occurs multiple times in LDAP?">
+			<when expression="#[payload.size() &gt; 1]">
+				<logger
+					message="MULTIPLE EMAIL CHECK : email #[flowVars.contact.email] occurs #[payload.size()] times in LDAP. Make Zendesk Ticket."
+					level="INFO" doc:name="True - Make Zendesk Ticket." />
+				<set-variable variableName="ticket_body"
+					value="#['- E-mailadres ' + flowVars.contact.email + ' komt ' + payload.size() + ' keer voor in LDAP. Een e-mailadres mag maar &#233;&#233;n keer gebruikt worden in LDAP. Gelieve na te kijken en de e-mailadressen te wijzigen.']"
+					doc:name="ticket_body" />
+				<choice doc:name="Choice - environment">
+					<when expression="#[flowVars.environment == 'production']">
+						<set-variable variableName="ticket_subject"
+							value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP']"
+							doc:name="Set ticket_subject for Production" />
+					</when>
+					<otherwise>
+						<set-variable variableName="ticket_subject"
+							value="#['Teamleader: E-mailadres komt meerdere keren voor in LDAP (TEST)']"
+							doc:name="Set ticket_subject Test" />
+					</otherwise>
+				</choice>
+				<logger
+					message="Going to create a Zendesk ticket to inform about multiple email adresses in ldap for : #[flowVars.contact.email]"
+					level="INFO" doc:name="Logger" />
+				<flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket" />
+			</when>
+			<otherwise>
+				<logger
+					message="MULTIPLE EMAIL CHECK : email #[flowVars.contact.email] occurs #[payload.size()] times in LDAP. Do Nothing"
+					level="INFO" doc:name="False - Do Nothing" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="ldap_contact_get_object_classes">
+		<ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]"
+			doc:name="LDAP Lookup Entry - objectClasses">
+			<ldap:attributes>
+				<ldap:attribute>objectClass</ldap:attribute>
+			</ldap:attributes>
+		</ldap:lookup>
+		<set-variable variableName="object_class"
+			value="#[message.payload.getAttributes().attributes().next().getValues()]"
+			doc:name="Variable - object_class" />
+		<ldap:lookup config-ref="LDAP_Configuration" dn="#[flowVars.ldap_dn]"
+			doc:name="LDAP Lookup givenName">
+			<ldap:attributes>
+				<ldap:attribute>givenName</ldap:attribute>
+			</ldap:attributes>
+		</ldap:lookup>
+		<choice doc:name="Check if LDAP Attrribute givenName exists">
+			<when
+				expression="#[payload.getAttributes().getAttribute(&quot;givenName&quot;) != null]">
+				<set-variable variableName="ldap_given_name"
+					value="#[payload.getAttributes().getAttribute(&quot;givenName&quot;).getValue()]"
+					doc:name="TRUE - Set ldap_given_name" />
+			</when>
+			<otherwise>
+				<remove-variable variableName="ldap_given_name"
+					doc:name="Delete flowVars.ldap_given_name" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="ldap_contact_check_externalId">
+		<validation:is-false
+			message="Only Technical Users may have an empty external id"
+			expression="#[payload.getAttributes().getAttribute(&quot;employeeType&quot;) != 'Technical User' &amp;&amp; payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;) == null]"
+			doc:name="Only Technical Users may have an empty external id" />
+	</sub-flow>
 </mule>

@@ -60,17 +60,19 @@ payload]]></dw:set-payload>
 			doc:name="contact_uuid" />
 		<choice doc:name="Contact UUID available?">
 			<when expression="#[flowVars.contact_uuid == empty]">
-				<set-variable variableName="state" value="#['CONTACT_SKIPPED_NO_UUID']"
-					doc:name="No - Variable - state" />
+				<set-variable variableName="state"
+					value="#['CONTACT_SKIPPED_NO_UUID']" doc:name="No - Variable - state" />
 				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
-                <set-variable variableName="result" value="contact skipped" doc:name="result"/>
+				<set-variable variableName="result" value="contact skipped"
+					doc:name="result" />
 			</when>
 			<otherwise>
 				<flow-ref name="ldap_contact_delete_ticket" doc:name="Yes - Create ticket for contact delete" />
-                <set-variable variableName="result" value="zendesk ticket created" doc:name="result"/>
+				<set-variable variableName="result" value="zendesk ticket created"
+					doc:name="result" />
 			</otherwise>
 		</choice>
-        <set-payload value="#[flowVars.result]" doc:name="Set Payload - result"/>
+		<set-payload value="#[flowVars.result]" doc:name="Set Payload - result" />
 	</flow>
 	<flow name="contact_receive_for_delete_get">
 		<http:listener config-ref="crm-httpListenerConfig" path="/ldap/contact/delete"

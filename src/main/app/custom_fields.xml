@@ -1,30 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<sub-flow name="get_custom_fields">
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                    <http:query-param paramName="for" value="#[flowVars.object_type]"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
-        <dw:transform-message doc:name="LinkedHashMap">
-            <dw:set-payload><![CDATA[%dw 1.0
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/getCustomFields.php" method="GET" doc:name="HTTP - Get Custom Fields">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+					<http:query-param paramName="for"
+						value="#[flowVars.object_type]" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<set-payload
+			value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]"
+			encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload" />
+		<dw:transform-message doc:name="LinkedHashMap">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-		<set-variable variableName="custom_fields" value="#[payload]" doc:name="Variable - custom_fields"/>
-        <set-variable variableName="state" value="#['GET_CUSTOM_FIELDS']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
+		</dw:transform-message>
+		<set-variable variableName="custom_fields" value="#[payload]"
+			doc:name="Variable - custom_fields" />
+		<set-variable variableName="state" value="#['GET_CUSTOM_FIELDS']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
 	</sub-flow>
 	<flow name="get_custom_field_id" initialState="stopped">
 		<dw:transform-message doc:name="Transform Message - id">
@@ -35,7 +50,7 @@ payload]]></dw:set-payload>
 		</dw:transform-message>
 	</flow>
 
-	<flow name="get_custom_field_values" >
+	<flow name="get_custom_field_values">
 		<dw:transform-message doc:name="Transform Message - custom_field_values">
 			<dw:set-variable variableName="custom_field_values"><![CDATA[%dw 1.0
 %output application/java
@@ -43,7 +58,8 @@ payload]]></dw:set-payload>
 {
 }]]></dw:set-variable>
 		</dw:transform-message>
-        <set-variable variableName="custom_field_id" value="#[payload.custom_field_id]" doc:name="Variable - custom_field_id"/>
+		<set-variable variableName="custom_field_id" value="#[payload.custom_field_id]"
+			doc:name="Variable - custom_field_id" />
 		<dw:transform-message doc:name="Transform Message - value of custom field">
 			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
@@ -62,12 +78,12 @@ payload splitBy ","]]></dw:set-payload>
 
 			</when>
 			<otherwise>
-				<logger level="INFO" doc:name="Logger - isEmpty"/>
+				<logger level="INFO" doc:name="Logger - isEmpty" />
 			</otherwise>
 		</choice>
 	</flow>
-	
-		<flow name="get_custom_field_values_contact" >
+
+	<flow name="get_custom_field_values_contact">
 		<dw:transform-message doc:name="Transform Message - custom_field_values">
 			<dw:set-variable variableName="custom_field_values"><![CDATA[%dw 1.0
 %output application/java
@@ -75,8 +91,10 @@ payload splitBy ","]]></dw:set-payload>
 {
 }]]></dw:set-variable>
 		</dw:transform-message>
-        <set-variable variableName="custom_field_id" value="#[payload.custom_field_id]" doc:name="Variable - custom_field_id"/>
-		<dw:transform-message doc:name="Transform Message - value of custom field - contact">
+		<set-variable variableName="custom_field_id" value="#[payload.custom_field_id]"
+			doc:name="Variable - custom_field_id" />
+		<dw:transform-message
+			doc:name="Transform Message - value of custom field - contact">
 			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -94,17 +112,17 @@ payload splitBy ","]]></dw:set-payload>
 
 			</when>
 			<otherwise>
-				<logger level="INFO" doc:name="Logger - isEmpty"/>
+				<logger level="INFO" doc:name="Logger - isEmpty" />
 			</otherwise>
 		</choice>
 	</flow>
-	 <sub-flow name="sector">
-        <dw:transform-message doc:name="Transform Message">
-            <dw:set-payload><![CDATA[%dw 1.0
+	<sub-flow name="sector">
+		<dw:transform-message doc:name="Transform Message">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 {
 }]]></dw:set-payload>
-        </dw:transform-message>
-    </sub-flow>
+		</dw:transform-message>
+	</sub-flow>
 </mule>

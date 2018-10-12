@@ -32,8 +32,8 @@ payload]]></dw:set-payload>
 		<flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list" />
 		<choice doc:name="Check if company not exists or is on skip list">
 			<when expression="#[flowVars.company_skip == true || company_exists == false]">
-				<set-variable variableName="state" value="COMPANY_SKIPPED_OR_NOT_LDAP"
-					doc:name="TRUE : Variable - state - company skipped or not in ldap" />
+				<set-variable variableName="state"
+	value="COMPANY_SKIPPED_OR_NOT_LDAP" doc:name="TRUE : Variable - state - company skipped or not in ldap" />
 				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
 				<set-variable variableName="result"
 					value="Company not deleted because it is on the skip list or not in LDAP"

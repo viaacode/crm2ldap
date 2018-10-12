@@ -66,7 +66,8 @@ payload]]></dw:set-payload>
 					<flow-ref name="ldap_contact_entry_to_update" doc:name="ldap_contact_entry_to_update" />
 					<ldap:modify config-ref="LDAP_Configuration" doc:name="LDAP Modify" />
 					<choice doc:name="Check if email has been changed">
-						<when expression="#[(flowVars.contact.email).toLowerCase() == (flowVars.ldap_mail).toLowerCase()]">
+						<when
+							expression="#[(flowVars.contact.email).toLowerCase() == (flowVars.ldap_mail).toLowerCase()]">
 							<logger message="Email '#[flowVars.contact.email]' did not change"
 								level="INFO" doc:name="Email did not change - Do Nothing" />
 							<set-variable variableName="result"
@@ -93,7 +94,8 @@ payload]]></dw:set-payload>
 							<choice doc:name="Choice - environment">
 								<when expression="#[flowVars.environment == 'production']">
 									<set-variable variableName="ticket_subject"
-										value="#['Teamleader: een e-mailadres is gewijzigd']" doc:name="Set ticket_subject for Production" />
+										value="#['Teamleader: een e-mailadres is gewijzigd']"
+										doc:name="Set ticket_subject for Production" />
 								</when>
 								<otherwise>
 									<set-variable variableName="ticket_subject"
@@ -105,7 +107,8 @@ payload]]></dw:set-payload>
 								message="Going to create a Zendesk ticket for the manual change of a contacts email address : #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]"
 								level="INFO" doc:name="Logger" />
 							<flow-ref name="zendesk_create_ticket" doc:name="zendesk_create_ticket" />
-							<set-variable variableName="result" value="Create a Zendesk ticket for the manual change of a contacts email address : #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]"
+							<set-variable variableName="result"
+								value="Create a Zendesk ticket for the manual change of a contacts email address : #[flowVars.ldap_dn] to #[flowVars.ldap_dn_new]"
 								doc:name="Variable -result" />
 						</otherwise>
 					</choice>

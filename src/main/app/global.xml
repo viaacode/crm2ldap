@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.9.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+	<context:property-placeholder location="${mule.env}.properties" />
+	<http:request-config name="HTTP_Request_Configuration_Zendesk"
+		protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443"
+		doc:name="HTTP Request Configuration" basePath="/api/v2" proxy-ref="Proxy_Configuration">
+		<http:basic-authentication username="${zendesk.email}/token"
+			password="${zendesk.api_token}" />
+	</http:request-config>
+	<http:listener-config name="crm-httpListenerConfig"
+		host="0.0.0.0" port="10012" doc:name="HTTP Listener Configuration" />
+	<configuration defaultExceptionStrategy-ref="globalChoice_Exception_Strategy"
+		doc:name="Configuration">
+		<http:config useTransportForUris="false" />
+	</configuration>
+	<slack:token-config name="Slack__Token_Configuration"
+		accessToken="${slack.token}" doc:name="Slack: Token Configuration">
+		<reconnect />
+	</slack:token-config>
+	<http:request-config name="HTTP_Request_Configuration_Slack"
+		protocol="HTTPS" host="slack.com" port="443" basePath="/api"
+		doc:name="HTTP Request Configuration" proxy-ref="Proxy_Configuration">
+	</http:request-config>
+	<http:proxy name="Proxy_Configuration" host="proxy.do.viaa.be"
+		port="80" doc:name="Proxy Configuration" />
+	<http:request-config name="HTTP_Request_Configuration_Teamleader"
+		doc:name="HTTP Request Configuration" basePath="/api" host="${teamleader.host}"
+		port="443" protocol="HTTPS" proxy-ref="Proxy_Configuration" />
+	<amqp:connector name="InboundAMQPConnector"
+		validateConnections="true" host="${rabbit.host}" port="${rabbit.port}"
+		virtualHost="${rabbit.vhost}" username="${rabbit.username}" password="${rabbit.password}"
+		ackMode="MANUAL" prefetchCount="1" numberOfChannels="1"
+		doc:name="AMQP-0-9 Connector">
+		<reconnect frequency="30000" count="50" />
+	</amqp:connector>
+	<amqp:connector name="OutboundAMQPConnector"
+		validateConnections="true" host="${rabbit.host}" port="${rabbit.port}"
+		virtualHost="${rabbit.vhost}" username="${rabbit.username}" password="${rabbit.password}"
+		doc:name="AMQP-0-9 Connector">
+		<reconnect frequency="30000" count="50" />
+	</amqp:connector>
+	<http:request-config name="HTTP_Request_Configuration_OR"
+		host="${or_number.host}" port="80" basePath="/po"
+		doc:name="HTTP Request Configuration" />
+	<quartz:connector name="Quartz" validateConnections="true"
+		doc:name="Quartz" />
+</mule>

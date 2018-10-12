@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:context="http://www.springframework.org/schema/context" xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
@@ -12,49 +16,73 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
-    <http:proxy name="Proxy_Configuration" host="proxy.do.viaa.be" port="80" doc:name="Proxy Configuration"/>
-    <http:request-config name="HTTP_Request_Configuration_Teamleader" doc:name="HTTP Request Configuration" basePath="/api" host="${teamleader.host}" port="443" protocol="HTTPS" proxy-ref="Proxy_Configuration"/>
-    <sub-flow name="update_company_with_or_number">
-        <choice doc:name="Check if OR Number needs to be updated in Teamleader">
-            <when expression="#[flowVars.update_or_number_in_teamleader == &quot;true&quot;]">
-                <set-payload value="#['']" doc:name="Set Payload - Empty"/>
-                <set-attachment attachmentName="api_group" value="${teamleader_api.group}" contentType="text/plain" doc:name="Attachment - api_group"/>
-                <set-attachment attachmentName="api_secret" value="${teamleader_api.secret}" contentType="text/plain" doc:name="Attachment - api.secret"/>
-                <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
-                <set-attachment attachmentName="company_id" value="#[(flowVars.object_id).toString()]" contentType="text/plain" doc:name="Attachment - company_id"/>
-                <set-attachment attachmentName="custom_field_${teamleader.custom_field.or_number}" value="#[flowVars.or_number]" contentType="text/plain" doc:name="Attachment - custom_field_ID - OR Number"/>
-                <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-                    <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateCompany.php" method="POST" doc:name="HTTP - UpdateCompany"/>
-                </until-successful>
-                <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-                <logger message="OR Number '#[flowVars.or_number]' updated in Company '#[flowVars.object_id]' - #[payload]" level="INFO" doc:name="Logger OR Number Updated in Company"/>
-                <set-variable variableName="state" value="#['UPDATE_OR_NUMBER']" doc:name="Variable"/>
-                <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-            </when>
-            <otherwise>
-                <logger message="No update for OR Number needed" level="INFO" doc:name="Logger - No update for OR Number needed"/>
-            </otherwise>
-        </choice>
-    </sub-flow>
-    <sub-flow name="get_company">
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getCompany.php" method="GET" doc:name="HTTP - GetComany Details">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                    <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
-        <dw:transform-message doc:name="LinkedHashMap">
-            <dw:set-payload><![CDATA[%dw 1.0
+	<sub-flow name="update_company_with_or_number">
+		<choice doc:name="Check if OR Number needs to be updated in Teamleader">
+			<when
+				expression="#[flowVars.update_or_number_in_teamleader == &quot;true&quot;]">
+				<set-payload value="#['']" doc:name="Set Payload - Empty" />
+				<set-attachment attachmentName="api_group"
+					value="${teamleader_api.group}" contentType="text/plain"
+					doc:name="Attachment - api_group" />
+				<set-attachment attachmentName="api_secret"
+					value="${teamleader_api.secret}" contentType="text/plain"
+					doc:name="Attachment - api.secret" />
+				<set-attachment attachmentName="track_changes" value="1"
+					contentType="text/plain" doc:name="Attachment - track_changes" />
+				<set-attachment attachmentName="company_id"
+					value="#[(flowVars.object_id).toString()]" contentType="text/plain"
+					doc:name="Attachment - company_id" />
+				<set-attachment attachmentName="custom_field_${teamleader.custom_field.or_number}"
+					value="#[flowVars.or_number]" contentType="text/plain"
+					doc:name="Attachment - custom_field_ID - OR Number" />
+				<until-successful maxRetries="5" synchronous="true"
+					doc:name="Until Successful">
+					<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+						path="/updateCompany.php" method="POST" doc:name="HTTP - UpdateCompany" />
+				</until-successful>
+				<byte-array-to-string-transformer
+					doc:name="Byte Array to String" />
+				<logger
+					message="OR Number '#[flowVars.or_number]' updated in Company '#[flowVars.object_id]' - #[payload]"
+					level="INFO" doc:name="Logger OR Number Updated in Company" />
+				<set-variable variableName="state" value="#['UPDATE_OR_NUMBER']"
+					doc:name="Variable" />
+				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+			</when>
+			<otherwise>
+				<logger message="No update for OR Number needed" level="INFO"
+					doc:name="Logger - No update for OR Number needed" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="get_company">
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/getCompany.php" method="GET" doc:name="HTTP - GetComany Details">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+					<http:query-param paramName="company_id"
+						value="#[flowVars.object_id]" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<set-payload
+			value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]"
+			encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload" />
+		<dw:transform-message doc:name="LinkedHashMap">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-        <set-variable variableName="company" value="#[payload]" doc:name="Variable - company"/>
-        <set-variable variableName="state" value="#['GET_COMPANY']" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
+		</dw:transform-message>
+		<set-variable variableName="company" value="#[payload]"
+			doc:name="Variable - company" />
+		<set-variable variableName="state" value="#['GET_COMPANY']"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
 </mule>

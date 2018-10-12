@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
@@ -10,111 +14,165 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
-    <validation:config name="Validation_Configuration" doc:name="Validation Configuration"/>
- <sub-flow name="get_contacts_by_company">
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContactsByCompany.php" method="GET" doc:name="HTTP - Get Contacts By Company">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                    <http:query-param paramName="company_id" value="#[flowVars.object_id]"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <dw:transform-message doc:name="Transform Message - payload" metadata:id="e7be1efc-37e6-4603-97e3-132e75930a6b">
-            <dw:input-payload doc:sample="sample_data\json_2.json" mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
+	<validation:config name="Validation_Configuration"
+		doc:name="Validation Configuration" />
+	<sub-flow name="get_contacts_by_company">
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/getContactsByCompany.php" method="GET"
+				doc:name="HTTP - Get Contacts By Company">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+					<http:query-param paramName="company_id"
+						value="#[flowVars.object_id]" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<dw:transform-message doc:name="Transform Message - payload"
+			metadata:id="e7be1efc-37e6-4603-97e3-132e75930a6b">
+			<dw:input-payload doc:sample="sample_data\json_2.json"
+				mimeType="application/json" />
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-        <scripting:component doc:name="Groovy - crm_contacts as LinkedHasMap">
-            <scripting:script engine="Groovy"><![CDATA[LinkedHashMap<Integer, LinkedHashMap> crm_contacts = new LinkedHashMap<Integer, LinkedHashMap>();
+		</dw:transform-message>
+		<scripting:component doc:name="Groovy - crm_contacts as LinkedHasMap">
+			<scripting:script engine="Groovy"><![CDATA[LinkedHashMap<Integer, LinkedHashMap> crm_contacts = new LinkedHashMap<Integer, LinkedHashMap>();
 
 for (int i = 0; i < payload.size(); i++) {
         crm_contacts.put(payload[i].get("id"), payload[i]);
             }
 
 return crm_contacts]]></scripting:script>
-        </scripting:component>
-        <set-variable variableName="crm_contacts" value="#[payload]" doc:name="Variable - crm_contacts"/>
-        <set-variable variableName="state" value="RELATED_CONTACTS_BY_COMPANY" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
-    <sub-flow name="contact_get_or_number_from_company">
-        <set-variable variableName="object_id_org" value="#[flowVars.object_id]" doc:name="Variable - object_id_org"/>
-        <set-variable variableName="object_id" value="#[flowVars.contact.linked_company_ids]" doc:name="Variable - object_id (company_id) "/>
-        <choice doc:name="Check If linked company">
-            <when expression="#[flowVars.object_id == null || flowVars.object_id == '']">
-                <logger message="Contact has no linked companies. " level="INFO" doc:name="False - Do Nothing"/>
-            </when>
-            <otherwise>
-                <flow-ref name="get_company" doc:name="get_company"/>
-                <set-variable variableName="or_number" value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]" doc:name="Variable - or_number"/>
-            </otherwise>
-        </choice>
-        <set-variable variableName="object_id" value="#[flowVars.object_id_org]" doc:name="Variable - object_id (restore)"/>
-    </sub-flow>
-    <sub-flow name="get_contact">
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/getContact.php" method="GET" doc:name="HTTP - Get Contact">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                    <http:query-param paramName="contact_id" value="#[flowVars.contact_id]"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <set-payload value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]" encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload"/>
-        <dw:transform-message doc:name="LinkedHashMap">
-            <dw:set-payload><![CDATA[%dw 1.0
+		</scripting:component>
+		<set-variable variableName="crm_contacts" value="#[payload]"
+			doc:name="Variable - crm_contacts" />
+		<set-variable variableName="state" value="RELATED_CONTACTS_BY_COMPANY"
+			doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
+	<sub-flow name="contact_get_or_number_from_company">
+		<set-variable variableName="object_id_org" value="#[flowVars.object_id]"
+			doc:name="Variable - object_id_org" />
+		<set-variable variableName="object_id"
+			value="#[flowVars.contact.linked_company_ids]" doc:name="Variable - object_id (company_id) " />
+		<choice doc:name="Check If linked company">
+			<when expression="#[flowVars.object_id == null || flowVars.object_id == '']">
+				<logger message="Contact has no linked companies. " level="INFO"
+					doc:name="False - Do Nothing" />
+			</when>
+			<otherwise>
+				<flow-ref name="get_company" doc:name="get_company" />
+				<set-variable variableName="or_number"
+					value="#[flowVars.company['custom_fields'].get(dw(&quot;p('teamleader.custom_field.or_number')&quot;))]"
+					doc:name="Variable - or_number" />
+			</otherwise>
+		</choice>
+		<set-variable variableName="object_id" value="#[flowVars.object_id_org]"
+			doc:name="Variable - object_id (restore)" />
+	</sub-flow>
+	<sub-flow name="get_contact">
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/getContact.php" method="GET" doc:name="HTTP - Get Contact">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+					<http:query-param paramName="contact_id"
+						value="#[flowVars.contact_id]" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<set-payload
+			value="#[org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4(message.payloadAs(java.lang.String))]"
+			encoding="UTF-8" mimeType="application/json" doc:name="HTML Decode Payload" />
+		<dw:transform-message doc:name="LinkedHashMap">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-        <set-variable variableName="contact" value="#[payload]" doc:name="Set Variable - contact"/>
-    </sub-flow>
-    <sub-flow name="contact_check_required_fields">
-        <validation:is-not-empty config-ref="Validation_Configuration" value="#[payload.surname]" doc:name="Validation - Surname must have a value" message="Contact Surname is Empty"/>
-        <validation:is-not-empty config-ref="Validation_Configuration"  doc:name="Validation - email must exists" message="Contact must have a email address" value="#[payload.email]"/>
-    </sub-flow>
-    <sub-flow name="contact_set_uuid">
-        <set-payload value="#['']" doc:name="Set Payload - Empty"/>
-        <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
-        <set-attachment attachmentName="contact_id" value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - contact_id"/>
-        <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.user_id}" value="#[(flowVars[&quot;ldap_entry_uuid&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID)"/>
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-    </sub-flow>
-       <sub-flow name="contact_clear_roles">
-        <set-payload value="#['']" doc:name="Set Payload - Empty"/>
-        <set-attachment attachmentName="track_changes" value="1" contentType="text/plain" doc:name="Attachment - track_changes"/>
-        <set-attachment attachmentName="contact_id" value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain" doc:name="Attachment - contact_id"/>
-        <set-attachment attachmentName="custom_field_${teamleader.custom_field.contact.roles}" value="#[&quot;&quot;]" contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID)"/>
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Teamleader" path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
-                <http:request-builder>
-                    <http:query-param paramName="api_group" value="${teamleader_api.group}"/>
-                    <http:query-param paramName="api_secret" value="${teamleader_api.secret}"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
+		</dw:transform-message>
+		<set-variable variableName="contact" value="#[payload]"
+			doc:name="Set Variable - contact" />
+	</sub-flow>
+	<sub-flow name="contact_check_required_fields">
+		<validation:is-not-empty config-ref="Validation_Configuration"
+			value="#[payload.surname]" doc:name="Validation - Surname must have a value"
+			message="Contact Surname is Empty" />
+		<validation:is-not-empty config-ref="Validation_Configuration"
+			doc:name="Validation - email must exists" message="Contact must have a email address"
+			value="#[payload.email]" />
+	</sub-flow>
+	<sub-flow name="contact_set_uuid">
+		<set-payload value="#['']" doc:name="Set Payload - Empty" />
+		<set-attachment attachmentName="track_changes" value="1"
+			contentType="text/plain" doc:name="Attachment - track_changes" />
+		<set-attachment attachmentName="contact_id"
+			value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain"
+			doc:name="Attachment - contact_id" />
+		<set-attachment
+			attachmentName="custom_field_${teamleader.custom_field.contact.user_id}"
+			value="#[(flowVars[&quot;ldap_entry_uuid&quot;]).toString()]"
+			contentType="text/plain" doc:name="Attachment - custom_field_ID - User ID(UUID)" />
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<byte-array-to-string-transformer
+			doc:name="Byte Array to String" />
+	</sub-flow>
+	<sub-flow name="contact_clear_roles">
+		<set-payload value="#['']" doc:name="Set Payload - Empty" />
+		<set-attachment attachmentName="track_changes" value="1"
+			contentType="text/plain" doc:name="Attachment - track_changes" />
+		<set-attachment attachmentName="contact_id"
+			value="#[(flowVars[&quot;contact_id&quot;]).toString()]" contentType="text/plain"
+			doc:name="Attachment - contact_id" />
+		<set-attachment
+			attachmentName="custom_field_${teamleader.custom_field.contact.roles}"
+			value="#[&quot;&quot;]" contentType="text/plain"
+			doc:name="Attachment - custom_field_ID - User ID(UUID)" />
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Teamleader"
+				path="/updateContact.php" method="POST" doc:name="HTTP - UpdateContact">
+				<http:request-builder>
+					<http:query-param paramName="api_group"
+						value="${teamleader_api.group}" />
+					<http:query-param paramName="api_secret"
+						value="${teamleader_api.secret}" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
 
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+		<byte-array-to-string-transformer
+			doc:name="Byte Array to String" />
 
-    </sub-flow>
-    <sub-flow name="contacts_match_crm_ldap">
-        <foreach doc:name="For Each - LDAP Contacts" collection="#[flowVars.ldap_contacts]">
-            <validation:is-false message="Only Technical Users may have an empty external id" expression="#[payload.getAttributes().getAttribute(&quot;employeeType&quot;) != 'Technical User' &amp;&amp; payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;) == null]" doc:name="Only Technical Users may have an empty external id"/>
-            <scripting:component doc:name="Groovy - LDAP Entry HashMap">
-                <scripting:script engine="Groovy"><![CDATA[Map<String, String> ldap_entry_hm = new LinkedHashMap<String, String>();
+	</sub-flow>
+	<sub-flow name="contacts_match_crm_ldap">
+		<foreach doc:name="For Each - LDAP Contacts" collection="#[flowVars.ldap_contacts]">
+			<validation:is-false
+				message="Only Technical Users may have an empty external id"
+				expression="#[payload.getAttributes().getAttribute(&quot;employeeType&quot;) != 'Technical User' &amp;&amp; payload.getAttributes().getAttribute(&quot;x-be-viaa-externalId&quot;) == null]"
+				doc:name="Only Technical Users may have an empty external id" />
+			<scripting:component doc:name="Groovy - LDAP Entry HashMap">
+				<scripting:script engine="Groovy"><![CDATA[Map<String, String> ldap_entry_hm = new LinkedHashMap<String, String>();
 
 String dn = payload.getDn();
 String entryUUID = (payload.getAttributes()).getAttribute("entryUUID").value;
@@ -132,57 +190,62 @@ ldap_entry_hm.put("x-be-viaa-externalId",externalId);
 
 return ldap_entry_hm
 ]]></scripting:script>
-            </scripting:component>
-            <set-variable variableName="ldap_entry_hm" value="#[payload]" doc:name="Variable - ldap_entry_hm"/>
-            <set-variable variableName="crm_entry_found" value="false" doc:name="crm_entry_found = false"/>
-            <foreach collection="crm_contacts" doc:name="For Each - CRM Contacts">
-                <choice doc:name="Check if Entry LDAP-CRM Matches">
-                    <when expression="#[payload[&quot;id&quot;] == flowVars.ldap_entry_hm[&quot;x-be-viaa-externalId&quot;]]">
-                        <scripting:component doc:name="Found - LDAP Update">
-                            <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"update")
+			</scripting:component>
+			<set-variable variableName="ldap_entry_hm" value="#[payload]"
+				doc:name="Variable - ldap_entry_hm" />
+			<set-variable variableName="crm_entry_found" value="false"
+				doc:name="crm_entry_found = false" />
+			<foreach collection="crm_contacts" doc:name="For Each - CRM Contacts">
+				<choice doc:name="Check if Entry LDAP-CRM Matches">
+					<when
+						expression="#[payload[&quot;id&quot;] == flowVars.ldap_entry_hm[&quot;x-be-viaa-externalId&quot;]]">
+						<scripting:component doc:name="Found - LDAP Update">
+							<scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"update")
 
 return payload]]></scripting:script>
-                        </scripting:component>
-                        <scripting:component doc:name="Remove entry from CRM Contact List">
-                            <scripting:script engine="Groovy"><![CDATA[flowVars.crm_contacts.remove(payload["id"])
+						</scripting:component>
+						<scripting:component doc:name="Remove entry from CRM Contact List">
+							<scripting:script engine="Groovy"><![CDATA[flowVars.crm_contacts.remove(payload["id"])
 
 return payload]]></scripting:script>
-                        </scripting:component>
-                        <set-variable variableName="crm_entry_found" value="true" doc:name="crm_entry_found = true"/>
-                    </when>
-                    <otherwise>
-                        <logger level="INFO" doc:name="Not Found - Do Nothing - Continue"/>
-                    </otherwise>
-                </choice>
-            </foreach>
-            <choice doc:name="CRM Entry Found?">
-                <when expression="#[flowVars.crm_entry_found == true]">
-                    <logger level="INFO" doc:name="Do Nothing - Continue"/>
-                </when>
-                <otherwise>
-                    <scripting:component doc:name="Not Found - LDAP Delete">
-                        <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"delete")
+						</scripting:component>
+						<set-variable variableName="crm_entry_found" value="true"
+							doc:name="crm_entry_found = true" />
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Not Found - Do Nothing - Continue" />
+					</otherwise>
+				</choice>
+			</foreach>
+			<choice doc:name="CRM Entry Found?">
+				<when expression="#[flowVars.crm_entry_found == true]">
+					<logger level="INFO" doc:name="Do Nothing - Continue" />
+				</when>
+				<otherwise>
+					<scripting:component doc:name="Not Found - LDAP Delete">
+						<scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.ldap_entry_hm["x-be-viaa-externalId"],"delete")
 
 return payload]]></scripting:script>
-                    </scripting:component>
-                </otherwise>
-            </choice>
-        </foreach>
-        <choice doc:name="CRM Contact List is Empty">
-            <when expression="#[crm_contacts.isEmpty() == false]">
-                <foreach collection="crm_contacts" doc:name="For Each CRM Contact List">
-                    <scripting:component doc:name="True LDAP Create Entry">
-                        <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(payload.id,"create")
+					</scripting:component>
+				</otherwise>
+			</choice>
+		</foreach>
+		<choice doc:name="CRM Contact List is Empty">
+			<when expression="#[crm_contacts.isEmpty() == false]">
+				<foreach collection="crm_contacts" doc:name="For Each CRM Contact List">
+					<scripting:component doc:name="True LDAP Create Entry">
+						<scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(payload.id,"create")
 
 return payload]]></scripting:script>
-                    </scripting:component>
-                </foreach>
-            </when>
-            <otherwise>
-                <logger level="INFO" doc:name="Logger"/>
-            </otherwise>
-        </choice>
-        <set-variable variableName="state" value="CONTACTS_DETERMINE_LDAP_ACTIONS" doc:name="Variable - state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
+					</scripting:component>
+				</foreach>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger" />
+			</otherwise>
+		</choice>
+		<set-variable variableName="state"
+			value="CONTACTS_DETERMINE_LDAP_ACTIONS" doc:name="Variable - state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
 </mule>

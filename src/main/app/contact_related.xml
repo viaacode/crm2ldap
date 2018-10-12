@@ -1,56 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
-    <sub-flow name="contact_sync_crm_ldap">
-        <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
-        <flow-ref name="get_contacts_by_company" doc:name="get_contacts_by_company"/>
-        <flow-ref name="ldap_get_all_contacts_for_company" doc:name="ldap_get_all_contacts_for_company"/>
-        <flow-ref name="contacts_match_crm_ldap" doc:name="contacts_match_crm_ldap"/>
-        <flow-ref name="ldap_contact" doc:name="ldap_contact"/>
-    </sub-flow>
-    <sub-flow name="contacts_related_update">
-        <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
-        <dw:transform-message doc:name="JSON to JAVA">
-            <dw:set-payload><![CDATA[%dw 1.0
+	<sub-flow name="contact_sync_crm_ldap">
+		<set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]"
+			doc:name="Initialize - ldap_contact_actions" />
+		<flow-ref name="get_contacts_by_company" doc:name="get_contacts_by_company" />
+		<flow-ref name="ldap_get_all_contacts_for_company" doc:name="ldap_get_all_contacts_for_company" />
+		<flow-ref name="contacts_match_crm_ldap" doc:name="contacts_match_crm_ldap" />
+		<flow-ref name="ldap_contact" doc:name="ldap_contact" />
+	</sub-flow>
+	<sub-flow name="contacts_related_update">
+		<logger
+			message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]"
+			level="INFO" doc:name="Log Input Data" />
+		<dw:transform-message doc:name="JSON to JAVA">
+			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload]]></dw:set-payload>
-        </dw:transform-message>
-        <flow-ref name="set_variables" doc:name="set_variables"/>
-        <flow-ref name="get_company" doc:name="get_company"/>
-        <flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list"/>
-        <choice doc:name="Check if company is on Skip List">
-            <when expression="#[flowVars.company_skip == true]">
-                <set-variable variableName="state" value="COMPANY_ON_SKIP_LIST"
+		</dw:transform-message>
+		<flow-ref name="set_variables" doc:name="set_variables" />
+		<flow-ref name="get_company" doc:name="get_company" />
+		<flow-ref name="xref_company_skip" doc:name="Check if Company is on skip list" />
+		<choice doc:name="Check if company is on Skip List">
+			<when expression="#[flowVars.company_skip == true]">
+				<set-variable variableName="state" value="COMPANY_ON_SKIP_LIST"
 					doc:name="True : Variable - state" />
 				<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
-                <set-variable variableName="result" value="Company Skipped" doc:name="Set result"/>
-            </when>
-            <otherwise>
-                <flow-ref name="checks" doc:name="checks"/>
-                <choice doc:name="Check if or_number is available and checks are passed">
-                    <when expression="#[flowVars.or_number == null || flowVars.checks_passed != true]">
-                        <set-variable variableName="ldap_contact_actions" value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions"/>
-                        <scripting:component doc:name="Set ldap contact actions to stop">
-                            <scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.object_id,"no_or_stop")
+				<set-variable variableName="result" value="Company Skipped"
+					doc:name="Set result" />
+			</when>
+			<otherwise>
+				<flow-ref name="checks" doc:name="checks" />
+				<choice doc:name="Check if or_number is available and checks are passed">
+					<when
+						expression="#[flowVars.or_number == null || flowVars.checks_passed != true]">
+						<set-variable variableName="ldap_contact_actions"
+							value="#[new java.util.HashMap()]" doc:name="Initialize - ldap_contact_actions" />
+						<scripting:component doc:name="Set ldap contact actions to stop">
+							<scripting:script engine="Groovy"><![CDATA[flowVars.ldap_contact_actions.put(flowVars.object_id,"no_or_stop")
 
 return payload]]></scripting:script>
-                        </scripting:component>
-                        <logger message="No OR number available or did not pass the company checks" level="INFO" doc:name="No OR Number - Stop"/>
-                    </when>
-                    <otherwise>
-                        <flow-ref name="contact_sync_crm_ldap" doc:name="YES - contact_sync_crm_ldap"/>
-                    </otherwise>
-                </choice>
-            </otherwise>
-        </choice>
+						</scripting:component>
+						<logger
+							message="No OR number available or did not pass the company checks"
+							level="INFO" doc:name="No OR Number - Stop" />
+					</when>
+					<otherwise>
+						<flow-ref name="contact_sync_crm_ldap" doc:name="YES - contact_sync_crm_ldap" />
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
 
-    </sub-flow>
+	</sub-flow>
 </mule>

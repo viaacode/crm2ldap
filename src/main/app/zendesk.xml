@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:oauth2="http://www.mulesoft.org/schema/mule/oauth2" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:oauth2="http://www.mulesoft.org/schema/mule/oauth2"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/oauth2 http://www.mulesoft.org/schema/mule/oauth2/current/mule-oauth2.xsd
@@ -11,15 +14,13 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <http:request-config name="HTTP_Request_Configuration_Zendesk" protocol="HTTPS" host="${zendesk.subdomain}.zendesk.com" port="443" doc:name="HTTP Request Configuration" basePath="/api/v2" proxy-ref="Proxy_Configuration">
-        <http:basic-authentication username="${zendesk.email}/token" password="${zendesk.api_token}"/>
-    </http:request-config>
-    <sub-flow name="zendesk_create_ticket">
-        <set-variable variableName="zendesk_assignee_id" value="${zendesk_assignee_id}" doc:name="Variable - zendesk_assignee_id"/>
-        <choice doc:name="Assignee?">
-            <when expression="#[flowVars.zendesk_assignee_id == 'none']">
-                <dw:transform-message doc:name="Ticket without assignee">
-                    <dw:set-payload><![CDATA[%dw 1.0
+	<sub-flow name="zendesk_create_ticket">
+		<set-variable variableName="zendesk_assignee_id" value="${zendesk_assignee_id}"
+			doc:name="Variable - zendesk_assignee_id" />
+		<choice doc:name="Assignee?">
+			<when expression="#[flowVars.zendesk_assignee_id == 'none']">
+				<dw:transform-message doc:name="Ticket without assignee">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -29,11 +30,11 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     "priority": "normal"
   }
 }]]></dw:set-payload>
-                </dw:transform-message>
-            </when>
-            <otherwise>
-                <dw:transform-message doc:name="Ticket with assignee">
-                    <dw:set-payload><![CDATA[%dw 1.0
+				</dw:transform-message>
+			</when>
+			<otherwise>
+				<dw:transform-message doc:name="Ticket with assignee">
+					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
 ---
 {
@@ -44,23 +45,31 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     "assignee_id": flowVars.zendesk_assignee_id
   }
 }]]></dw:set-payload>
-                </dw:transform-message>
-            </otherwise>
-        </choice>
+				</dw:transform-message>
+			</otherwise>
+		</choice>
 
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="ZENDESK TICKET : #[payload]" level="WARN" doc:name="zendesk ticket"/>
-        <until-successful maxRetries="5" synchronous="true" doc:name="Until Successful">
-            <http:request config-ref="HTTP_Request_Configuration_Zendesk" path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
-                <http:request-builder>
-                    <http:header headerName="Content-Type" value="application/json"/>
-                </http:request-builder>
-            </http:request>
-        </until-successful>
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
-        <logger message="ZENDESK HTTP Response - #[payload]" level="WARN" doc:name="Logger"/>
-        <set-variable variableName="ticket" value="#[payload]" doc:name="ticket"/>
-        <set-variable variableName="state" value="ZENDESK_TICKET_CREATED" doc:name="state"/>
-        <flow-ref name="log_elastic_search" doc:name="log_elastic_search"/>
-    </sub-flow>
+		<byte-array-to-string-transformer
+			doc:name="Byte Array to String" />
+		<logger message="ZENDESK TICKET : #[payload]" level="WARN"
+			doc:name="zendesk ticket" />
+		<until-successful maxRetries="5" synchronous="true"
+			doc:name="Until Successful">
+			<http:request config-ref="HTTP_Request_Configuration_Zendesk"
+				path="/tickets.json" method="POST" doc:name="HTTP - POST - /tickets.json">
+				<http:request-builder>
+					<http:header headerName="Content-Type" value="application/json" />
+				</http:request-builder>
+			</http:request>
+		</until-successful>
+		<byte-array-to-string-transformer
+			doc:name="Byte Array to String" />
+		<logger message="ZENDESK HTTP Response - #[payload]" level="WARN"
+			doc:name="Logger" />
+		<set-variable variableName="ticket" value="#[payload]"
+			doc:name="ticket" />
+		<set-variable variableName="state" value="ZENDESK_TICKET_CREATED"
+			doc:name="state" />
+		<flow-ref name="log_elastic_search" doc:name="log_elastic_search" />
+	</sub-flow>
 </mule>
