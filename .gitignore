@@ -1,4 +1,5 @@
 staging.properties
+staging.yaml
 production.properties
 local.properties
 .classpath
