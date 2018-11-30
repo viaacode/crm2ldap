@@ -6,7 +6,7 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10002" doc:name="HTTP Listener Configuration"/>
+    <http:listener-config name="crm-httpListenerConfig" host="0.0.0.0" port="10012" doc:name="HTTP Listener Configuration"/>
     <context:property-placeholder location="${mule.env}.properties"/>
     <sub-flow name="company_create_update">
         <logger message="Webhook received from Team Leader : #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Log Input Data"/>
