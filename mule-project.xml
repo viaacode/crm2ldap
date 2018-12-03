@@ -3,6 +3,6 @@
     <name>crm2ldap</name>
     <description></description>
     <muleExtension name="LDAP" qualifier="org.mule.tooling.ui.contribution.ldap.3.5.0"/>
-    <muleExtension name="Slack" qualifier="org.mule.tooling.ui.contribution.slack.3.5.0"/>
     <muleExtension name="Amazon S3" qualifier="org.mule.tooling.ui.contribution.s3.3.5.0"/>
+    <muleExtension name="Slack" qualifier="org.mule.tooling.ui.contribution.slack.3.5.0"/>
 </mule-project>
