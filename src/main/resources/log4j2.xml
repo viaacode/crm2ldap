@@ -11,7 +11,7 @@
 
     <Appenders>
         <RollingFile name="file" fileName="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}crm2ldap.log" 
-                 filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}crm2ldap-%i.log">
+                 filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}crm2ldap.log.%i">
             <PatternLayout pattern="%d [%t] %-5p %c - %m%n" />
             <SizeBasedTriggeringPolicy size="10 MB" />
             <DefaultRolloverStrategy max="10"/>
@@ -43,7 +43,7 @@
         <AsyncLogger name="org.jetel" level="WARN"/>
         <AsyncLogger name="Tracking" level="WARN"/>
         
-        <AsyncRoot level="WARN">
+        <AsyncRoot level="INFO">
             <AppenderRef ref="file" />
         </AsyncRoot>
     </Loggers>
