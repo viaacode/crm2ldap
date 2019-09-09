@@ -24,24 +24,5 @@ payload]]></dw:set-payload>
             </dw:transform-message>
         </ee:cache>
     </sub-flow>
-     <sub-flow name="xref_company_skip">
-        <ee:cache doc:name="Cache">
-            <parse-template location="${environment}_xref_company_skip.json" doc:name="Read - xref_company_skip.json" metadata:id="e1761f6d-3d96-44e4-8ca9-557adbdcea39"/>
-            <json:json-to-object-transformer doc:name="JSON to Object"/>
-            <dw:transform-message doc:name="ArrayList">
-                <dw:set-payload><![CDATA[%dw 1.0
-%output application/java
----
-payload]]></dw:set-payload>
-            </dw:transform-message>
-            <choice doc:name="Check if company in skip list">
-                <when expression="#[payload.indexOf((flowVars.company.id).toString()) &gt;= 0]">
-                    <set-variable variableName="company_skip" value="true" doc:name="Set company_skip = true"/>
-                </when>
-                <otherwise>
-                    <set-variable variableName="company_skip" value="false" doc:name="Set company_skip = false"/>
-                </otherwise>
-            </choice>
-        </ee:cache>
-    </sub-flow>
+
 </mule>
