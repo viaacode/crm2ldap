@@ -50,7 +50,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
             <flow-ref name="xref_type2sector" doc:name="xref_type2sector"/>
         </enricher>
         <set-variable variableName="ldap_sector" value="#[flowVars.xref_sectors.get(flowVars.type_organization)]" doc:name="Set ldap_sector"/>
-        <set-variable variableName="category_viaa" value="#[flowVars.company.name == &quot;VIAA&quot;]" doc:name="Set category_viaa"/>
+        <set-variable variableName="category_viaa" value="#[flowVars.company.id == ${teamleader.company.meemoo.id}]" doc:name="Set category_viaa"/>
         <set-variable variableName="category_content_partner" value="#[payload[&quot;kring&quot;] != null]" doc:name="Set category_content_partner"/>
         <set-variable variableName="category_digitaliseringpartner" value="#[(payload[&quot;type&quot;] != null) &amp;&amp; (payload[&quot;relatie&quot;] != null) &amp;&amp; (payload[&quot;type&quot;]).contains(dw(&quot;p('teamleader.custom_field.digitaliseringsbedrijf')&quot;)) &amp;&amp; (payload[&quot;relatie&quot;]).contains(dw(&quot;p('teamleader.custom_field.leverancier')&quot;))]" doc:name="Set category_digitaliseringpartner"/>
         <set-variable variableName="category_customer" value="#[(payload[&quot;relatie&quot;] != null) &amp;&amp; (payload[&quot;relatie&quot;]).contains(dw(&quot;p('teamleader.custom_field.dienstenafnemer')&quot;))]" doc:name="Set category_customer"/>
