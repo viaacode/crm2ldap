@@ -48,7 +48,7 @@ payload]]></dw:set-payload>
 			<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
-flowVars.company.custom_fields[payload.custom_field_id]]]></dw:set-payload>
+(flowVars.company.custom_fields[payload.custom_field_id] as :string) when (flowVars.company.custom_fields[payload.custom_field_id] != null) otherwise null]]></dw:set-payload>
 		</dw:transform-message>
 		<choice doc:name="Choice - check for empty payload">
 			<when expression="payload != null &amp;&amp; payload.length() &gt; 0">
@@ -62,7 +62,7 @@ payload splitBy ","]]></dw:set-payload>
 
 			</when>
 			<otherwise>
-				<logger level="INFO" doc:name="Logger - isEmpty"/>
+				<logger level="INFO" doc:name="Logger - isEmpty" message="Custom field value is empty/null"/>
 			</otherwise>
 		</choice>
 	</flow>
